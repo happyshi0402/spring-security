@@ -8,7 +8,6 @@ configurations {
 }
 
 dependencies {
-	compile 'aopalliance:aopalliance'
 	compile 'org.springframework:spring-aop'
 	compile 'org.springframework:spring-beans'
 	compile 'org.springframework:spring-context'
@@ -25,7 +24,7 @@ dependencies {
 	optional 'org.springframework:spring-jdbc'
 	optional 'org.springframework:spring-tx'
 
-	testCompile powerMockDependencies
+	testCompile powerMock2Dependencies
 	testCompile 'commons-collections:commons-collections'
 	testCompile 'io.projectreactor:reactor-test'
 	testCompile 'org.skyscreamer:jsonassert'
@@ -35,16 +34,24 @@ dependencies {
 	testRuntime 'org.hsqldb:hsqldb'
 }
 
-classes.doLast {
-	copy {
-		from includeProject.sourceSets.main.output
-		into sourceSets.main.output.classesDir
+task springVersion(type: versions.VersionsResourceTasks) {
+	versionsFile = file("${buildDir}/versions/spring-security.versions")
+	versions = { project.dependencyManagement.managedVersions }
+}
+
+tasks.processResources {
+	into('META-INF') {
+		from project.tasks.springVersion.outputs
 	}
 }
+
+tasks.jar.from { includeProject.sourceSets.main.output }
 
 tasks.sourcesJar.from {includeProject.sourceSets.main.java}
 
 configure(project.tasks.withType(Test)) {
-	systemProperties['springSecurityVersion'] = version
-	systemProperties['springVersion'] = project.dependencyManagement.managedVersions['org.springframework:spring-core']
+	doFirst {
+		systemProperties['springSecurityVersion'] = version
+		systemProperties['springVersion'] = project.dependencyManagement.managedVersions['org.springframework:spring-core']
+	}
 }

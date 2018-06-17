@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.access.PermissionEvaluator;
 import org.springframework.security.access.expression.SecurityExpressionHandler;
 import org.springframework.security.config.annotation.AbstractConfiguredSecurityBuilder;
 import org.springframework.security.config.annotation.ObjectPostProcessor;
@@ -47,7 +49,7 @@ import org.springframework.security.web.access.WebInvocationPrivilegeEvaluator;
 import org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler;
 import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
 import org.springframework.security.web.debug.DebugFilter;
-import org.springframework.security.web.firewall.DefaultHttpFirewall;
+import org.springframework.security.web.firewall.StrictHttpFirewall;
 import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -79,7 +81,7 @@ public final class WebSecurity extends
 		SecurityBuilder<Filter>, ApplicationContextAware {
 	private final Log logger = LogFactory.getLog(getClass());
 
-	private final List<RequestMatcher> ignoredRequests = new ArrayList<RequestMatcher>();
+	private final List<RequestMatcher> ignoredRequests = new ArrayList<>();
 
 	private final List<SecurityBuilder<? extends SecurityFilterChain>> securityFilterChainBuilders = new ArrayList<SecurityBuilder<? extends SecurityFilterChain>>();
 
@@ -159,7 +161,7 @@ public final class WebSecurity extends
 
 	/**
 	 * Allows customizing the {@link HttpFirewall}. The default is
-	 * {@link DefaultHttpFirewall}.
+	 * {@link StrictHttpFirewall}.
 	 *
 	 * @param httpFirewall the custom {@link HttpFirewall}
 	 * @return the {@link WebSecurity} for further customizations
@@ -277,11 +279,13 @@ public final class WebSecurity extends
 	protected Filter performBuild() throws Exception {
 		Assert.state(
 				!securityFilterChainBuilders.isEmpty(),
-				"At least one SecurityBuilder<? extends SecurityFilterChain> needs to be specified. Typically this done by adding a @Configuration that extends WebSecurityConfigurerAdapter. More advanced users can invoke "
+				() -> "At least one SecurityBuilder<? extends SecurityFilterChain> needs to be specified. "
+						+ "Typically this done by adding a @Configuration that extends WebSecurityConfigurerAdapter. "
+						+ "More advanced users can invoke "
 						+ WebSecurity.class.getSimpleName()
 						+ ".addSecurityFilterChainBuilder directly");
 		int chainSize = ignoredRequests.size() + securityFilterChainBuilders.size();
-		List<SecurityFilterChain> securityFilterChains = new ArrayList<SecurityFilterChain>(
+		List<SecurityFilterChain> securityFilterChains = new ArrayList<>(
 				chainSize);
 		for (RequestMatcher ignoredRequest : ignoredRequests) {
 			securityFilterChains.add(new DefaultSecurityFilterChain(ignoredRequest));
@@ -381,6 +385,14 @@ public final class WebSecurity extends
 			throws BeansException {
 		this.defaultWebSecurityExpressionHandler
 				.setApplicationContext(applicationContext);
+		try {
+			this.defaultWebSecurityExpressionHandler.setPermissionEvaluator(applicationContext.getBean(
+					PermissionEvaluator.class));
+		} catch(NoSuchBeanDefinitionException e) {}
+
 		this.ignoredRequestRegistry = new IgnoredRequestConfigurer(applicationContext);
+		try {
+			this.httpFirewall = applicationContext.getBean(HttpFirewall.class);
+		} catch(NoSuchBeanDefinitionException e) {}
 	}
 }

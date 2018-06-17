@@ -6,7 +6,7 @@
 	<module name="SuppressionFilter">
 		<property name="file" value="${configDir}/suppressions.xml"/>
 	</module>
-	
+
 	<!-- Root Checks -->
 	<module name="RegexpHeader">
 		<property name="headerFile" value="${configDir}/header.txt"/>
@@ -15,6 +15,17 @@
 
 	<!-- Root Checks -->
 	<module name="TreeWalker">
+		<!-- Annotations -->
+		<module name="MissingOverrideCheck" />
+
+		<!-- Coding -->
+		<module name="EmptyStatementCheck" />
+
+		<!-- Imports -->
+		<module name="UnusedImportsCheck">
+			<property name="processJavadoc" value="true" />
+		</module>
+
 		<!-- Regexp -->
 		<module name="RegexpSinglelineJava">
 			<property name="format" value="^\t* +\t*\S"/>
@@ -32,5 +43,8 @@
 			<property name="illegalPattern" value="true"/>
 			<property name="message" value="Trailing whitespace"/>
 		</module>
+
+		<!-- Whitespace -->
+		<module name="WhitespaceAfterCheck" />
 	</module>
 </module>

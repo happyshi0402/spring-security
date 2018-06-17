@@ -15,6 +15,9 @@
  */
 package org.springframework.security.config.annotation.web.configurers
 
+import org.springframework.security.core.userdetails.User
+import org.springframework.security.provisioning.InMemoryUserDetailsManager
+
 import javax.servlet.http.HttpServletResponse
 
 import org.springframework.context.annotation.Bean;
@@ -86,6 +89,27 @@ class ExceptionHandlingConfigurerTests extends BaseSpringSpec {
 			MediaType.TEXT_XML_VALUE                     | HttpServletResponse.SC_UNAUTHORIZED
 	}
 
+	// gh-4831
+	def "Accept */* is Basic by default"() {
+		setup:
+		loadConfig(DefaultSecurityConfig)
+		when:
+		request.addHeader("Accept", MediaType.ALL_VALUE)
+		springSecurityFilterChain.doFilter(request,response,chain)
+		then:
+		response.status == HttpServletResponse.SC_UNAUTHORIZED
+	}
+
+	def "Chrome is Form by default"() {
+		setup:
+		loadConfig(DefaultSecurityConfig)
+		when:
+		request.addHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8")
+		springSecurityFilterChain.doFilter(request,response,chain)
+		then:
+		response.status == HttpServletResponse.SC_MOVED_TEMPORARILY
+	}
+
 	def "ContentNegotiationStrategy defaults to HeaderContentNegotiationStrategy"() {
 		when:
 			loadConfig(HttpBasicAndFormLoginEntryPointsConfig)
@@ -105,6 +129,20 @@ class ExceptionHandlingConfigurerTests extends BaseSpringSpec {
 			springSecurityFilterChain.doFilter(request,response,chain)
 		then:
 			response.status == HttpServletResponse.SC_UNAUTHORIZED
+	}
+
+	@EnableWebSecurity
+	static class DefaultSecurityConfig {
+
+		@Bean
+		public InMemoryUserDetailsManager userDetailsManager() {
+			return new InMemoryUserDetailsManager(User.withDefaultPasswordEncoder()
+				.username("user")
+				.password("password")
+				.roles("USER")
+				.build()
+			);
+		}
 	}
 
 	@EnableWebSecurity

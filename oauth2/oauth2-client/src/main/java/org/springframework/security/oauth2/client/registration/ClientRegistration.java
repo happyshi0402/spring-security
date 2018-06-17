@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,298 +17,460 @@ package org.springframework.security.oauth2.client.registration;
 
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * A representation of a client registration with an <i>OAuth 2.0 Authorization Server</i>.
+ * A representation of a client registration with an OAuth 2.0 or OpenID Connect 1.0 Provider.
  *
  * @author Joe Grandja
  * @since 5.0
  * @see <a target="_blank" href="https://tools.ietf.org/html/rfc6749#section-2">Section 2 Client Registration</a>
  */
-public class ClientRegistration {
+public final class ClientRegistration {
+	private String registrationId;
 	private String clientId;
 	private String clientSecret;
 	private ClientAuthenticationMethod clientAuthenticationMethod = ClientAuthenticationMethod.BASIC;
 	private AuthorizationGrantType authorizationGrantType;
-	private String redirectUri;
-	private Set<String> scope = Collections.emptySet();
+	private String redirectUriTemplate;
+	private Set<String> scopes = Collections.emptySet();
 	private ProviderDetails providerDetails = new ProviderDetails();
 	private String clientName;
-	private String clientAlias;
 
-	protected ClientRegistration() {
+	private ClientRegistration() {
 	}
 
+	/**
+	 * Returns the identifier for the registration.
+	 *
+	 * @return the identifier for the registration
+	 */
+	public String getRegistrationId() {
+		return this.registrationId;
+	}
+
+	/**
+	 * Returns the client identifier.
+	 *
+	 * @return the client identifier
+	 */
 	public String getClientId() {
 		return this.clientId;
 	}
 
-	protected void setClientId(String clientId) {
-		this.clientId = clientId;
-	}
-
+	/**
+	 * Returns the client secret.
+	 *
+	 * @return the client secret
+	 */
 	public String getClientSecret() {
 		return this.clientSecret;
 	}
 
-	protected void setClientSecret(String clientSecret) {
-		this.clientSecret = clientSecret;
-	}
-
+	/**
+	 * Returns the {@link ClientAuthenticationMethod authentication method} used
+	 * when authenticating the client with the authorization server.
+	 *
+	 * @return the {@link ClientAuthenticationMethod}
+	 */
 	public ClientAuthenticationMethod getClientAuthenticationMethod() {
 		return this.clientAuthenticationMethod;
 	}
 
-	protected void setClientAuthenticationMethod(ClientAuthenticationMethod clientAuthenticationMethod) {
-		this.clientAuthenticationMethod = clientAuthenticationMethod;
-	}
-
+	/**
+	 * Returns the {@link AuthorizationGrantType authorization grant type} used for the client.
+	 *
+	 * @return the {@link AuthorizationGrantType}
+	 */
 	public AuthorizationGrantType getAuthorizationGrantType() {
 		return this.authorizationGrantType;
 	}
 
-	protected void setAuthorizationGrantType(AuthorizationGrantType authorizationGrantType) {
-		this.authorizationGrantType = authorizationGrantType;
+	/**
+	 * Returns the uri (or uri template) for the redirection endpoint.
+	 *
+	 * @return the uri for the redirection endpoint
+	 */
+	public String getRedirectUriTemplate() {
+		return this.redirectUriTemplate;
 	}
 
-	public String getRedirectUri() {
-		return this.redirectUri;
+	/**
+	 * Returns the scope(s) used for the client.
+	 *
+	 * @return the {@code Set} of scope(s)
+	 */
+	public Set<String> getScopes() {
+		return this.scopes;
 	}
 
-	protected void setRedirectUri(String redirectUri) {
-		this.redirectUri = redirectUri;
-	}
-
-	public Set<String> getScope() {
-		return this.scope;
-	}
-
-	protected void setScope(Set<String> scope) {
-		this.scope = scope;
-	}
-
+	/**
+	 * Returns the details of the provider.
+	 *
+	 * @return the {@link ProviderDetails}
+	 */
 	public ProviderDetails getProviderDetails() {
 		return this.providerDetails;
 	}
 
-	protected void setProviderDetails(ProviderDetails providerDetails) {
-		this.providerDetails = providerDetails;
-	}
-
+	/**
+	 * Returns the logical name of the client or registration.
+	 *
+	 * @return the client or registration name
+	 */
 	public String getClientName() {
 		return this.clientName;
 	}
 
-	protected void setClientName(String clientName) {
-		this.clientName = clientName;
+	@Override
+	public String toString() {
+		return "ClientRegistration{"
+			+ "registrationId='" + this.registrationId + '\''
+			+ ", clientId='" + this.clientId + '\''
+			+ ", clientSecret='" + this.clientSecret + '\''
+			+ ", clientAuthenticationMethod=" + this.clientAuthenticationMethod
+			+ ", authorizationGrantType=" + this.authorizationGrantType
+			+ ", redirectUriTemplate='" + this.redirectUriTemplate + '\''
+			+ ", scopes=" + this.scopes
+			+ ", providerDetails=" + this.providerDetails
+			+ ", clientName='" + this.clientName
+			+ '\'' + '}';
 	}
 
-	public String getClientAlias() {
-		return this.clientAlias;
-	}
-
-	protected void setClientAlias(String clientAlias) {
-		this.clientAlias = clientAlias;
-	}
-
+	/**
+	 * Details of the Provider.
+	 */
 	public class ProviderDetails {
 		private String authorizationUri;
 		private String tokenUri;
-		private String userInfoUri;
+		private UserInfoEndpoint userInfoEndpoint = new UserInfoEndpoint();
 		private String jwkSetUri;
 
-		protected ProviderDetails() {
+		private ProviderDetails() {
 		}
 
+		/**
+		 * Returns the uri for the authorization endpoint.
+		 *
+		 * @return the uri for the authorization endpoint
+		 */
 		public String getAuthorizationUri() {
 			return this.authorizationUri;
 		}
 
-		protected void setAuthorizationUri(String authorizationUri) {
-			this.authorizationUri = authorizationUri;
-		}
-
+		/**
+		 * Returns the uri for the token endpoint.
+		 *
+		 * @return the uri for the token endpoint
+		 */
 		public String getTokenUri() {
 			return this.tokenUri;
 		}
 
-		protected void setTokenUri(String tokenUri) {
-			this.tokenUri = tokenUri;
+		/**
+		 * Returns the details of the {@link UserInfoEndpoint UserInfo Endpoint}.
+		 *
+		 * @return the {@link UserInfoEndpoint}
+		 */
+		public UserInfoEndpoint getUserInfoEndpoint() {
+			return this.userInfoEndpoint;
 		}
 
-		public String getUserInfoUri() {
-			return this.userInfoUri;
-		}
-
-		protected void setUserInfoUri(String userInfoUri) {
-			this.userInfoUri = userInfoUri;
-		}
-
+		/**
+		 * Returns the uri for the JSON Web Key (JWK) Set endpoint.
+		 *
+		 * @return the uri for the JSON Web Key (JWK) Set endpoint
+		 */
 		public String getJwkSetUri() {
 			return this.jwkSetUri;
 		}
 
-		protected void setJwkSetUri(String jwkSetUri) {
-			this.jwkSetUri = jwkSetUri;
+		/**
+		 * Details of the UserInfo Endpoint.
+		 */
+		public class UserInfoEndpoint {
+			private String uri;
+			private String userNameAttributeName;
+
+			private UserInfoEndpoint() {
+			}
+
+			/**
+			 * Returns the uri for the user info endpoint.
+			 *
+			 * @return the uri for the user info endpoint
+			 */
+			public String getUri() {
+				return this.uri;
+			}
+
+			/**
+			 * Returns the attribute name used to access the user's name from the user info response.
+			 *
+			 * @return the attribute name used to access the user's name from the user info response
+			 */
+			public String getUserNameAttributeName() {
+				return this.userNameAttributeName;
+			}
 		}
 	}
 
+	/**
+	 * Returns a new {@link Builder}, initialized with the provided registration identifier.
+	 *
+	 * @param registrationId the identifier for the registration
+	 * @return the {@link Builder}
+	 */
+	public static Builder withRegistrationId(String registrationId) {
+		Assert.hasText(registrationId, "registrationId cannot be empty");
+		return new Builder(registrationId);
+	}
+
+	/**
+	 * A builder for {@link ClientRegistration}.
+	 */
 	public static class Builder {
-		protected String clientId;
-		protected String clientSecret;
-		protected ClientAuthenticationMethod clientAuthenticationMethod = ClientAuthenticationMethod.BASIC;
-		protected AuthorizationGrantType authorizationGrantType;
-		protected String redirectUri;
-		protected Set<String> scope;
-		protected String authorizationUri;
-		protected String tokenUri;
-		protected String userInfoUri;
-		protected String jwkSetUri;
-		protected String clientName;
-		protected String clientAlias;
+		private String registrationId;
+		private String clientId;
+		private String clientSecret;
+		private ClientAuthenticationMethod clientAuthenticationMethod = ClientAuthenticationMethod.BASIC;
+		private AuthorizationGrantType authorizationGrantType;
+		private String redirectUriTemplate;
+		private Set<String> scopes;
+		private String authorizationUri;
+		private String tokenUri;
+		private String userInfoUri;
+		private String userNameAttributeName;
+		private String jwkSetUri;
+		private String clientName;
 
-		public Builder(String clientId) {
+		private Builder(String registrationId) {
+			this.registrationId = registrationId;
+		}
+
+		/**
+		 * Sets the client identifier.
+		 *
+		 * @param clientId the client identifier
+		 * @return the {@link Builder}
+		 */
+		public Builder clientId(String clientId) {
 			this.clientId = clientId;
+			return this;
 		}
 
-		public Builder(ClientRegistrationProperties clientRegistrationProperties) {
-			this(clientRegistrationProperties.getClientId());
-			this.clientSecret(clientRegistrationProperties.getClientSecret());
-			this.clientAuthenticationMethod(clientRegistrationProperties.getClientAuthenticationMethod());
-			this.authorizationGrantType(clientRegistrationProperties.getAuthorizationGrantType());
-			this.redirectUri(clientRegistrationProperties.getRedirectUri());
-			if (!CollectionUtils.isEmpty(clientRegistrationProperties.getScope())) {
-				this.scope(clientRegistrationProperties.getScope().stream().toArray(String[]::new));
-			}
-			this.authorizationUri(clientRegistrationProperties.getAuthorizationUri());
-			this.tokenUri(clientRegistrationProperties.getTokenUri());
-			this.userInfoUri(clientRegistrationProperties.getUserInfoUri());
-			this.jwkSetUri(clientRegistrationProperties.getJwkSetUri());
-			this.clientName(clientRegistrationProperties.getClientName());
-			this.clientAlias(clientRegistrationProperties.getClientAlias());
-		}
-
-		public Builder(ClientRegistration clientRegistration) {
-			this(clientRegistration.getClientId());
-			this.clientSecret(clientRegistration.getClientSecret());
-			this.clientAuthenticationMethod(clientRegistration.getClientAuthenticationMethod());
-			this.authorizationGrantType(clientRegistration.getAuthorizationGrantType());
-			this.redirectUri(clientRegistration.getRedirectUri());
-			if (!CollectionUtils.isEmpty(clientRegistration.getScope())) {
-				this.scope(clientRegistration.getScope().stream().toArray(String[]::new));
-			}
-			this.authorizationUri(clientRegistration.getProviderDetails().getAuthorizationUri());
-			this.tokenUri(clientRegistration.getProviderDetails().getTokenUri());
-			this.userInfoUri(clientRegistration.getProviderDetails().getUserInfoUri());
-			this.jwkSetUri(clientRegistration.getProviderDetails().getJwkSetUri());
-			this.clientName(clientRegistration.getClientName());
-			this.clientAlias(clientRegistration.getClientAlias());
-		}
-
+		/**
+		 * Sets the client secret.
+		 *
+		 * @param clientSecret the client secret
+		 * @return the {@link Builder}
+		 */
 		public Builder clientSecret(String clientSecret) {
 			this.clientSecret = clientSecret;
 			return this;
 		}
 
+		/**
+		 * Sets the {@link ClientAuthenticationMethod authentication method} used
+		 * when authenticating the client with the authorization server.
+		 *
+		 * @param clientAuthenticationMethod the authentication method used for the client
+		 * @return the {@link Builder}
+		 */
 		public Builder clientAuthenticationMethod(ClientAuthenticationMethod clientAuthenticationMethod) {
 			this.clientAuthenticationMethod = clientAuthenticationMethod;
 			return this;
 		}
 
+		/**
+		 * Sets the {@link AuthorizationGrantType authorization grant type} used for the client.
+		 *
+		 * @param authorizationGrantType the authorization grant type used for the client
+		 * @return the {@link Builder}
+		 */
 		public Builder authorizationGrantType(AuthorizationGrantType authorizationGrantType) {
 			this.authorizationGrantType = authorizationGrantType;
 			return this;
 		}
 
-		public Builder redirectUri(String redirectUri) {
-			this.redirectUri = redirectUri;
+		/**
+		 * Sets the uri (or uri template) for the redirection endpoint.
+		 *
+		 * @param redirectUriTemplate the uri for the redirection endpoint
+		 * @return the {@link Builder}
+		 */
+		public Builder redirectUriTemplate(String redirectUriTemplate) {
+			this.redirectUriTemplate = redirectUriTemplate;
 			return this;
 		}
 
+		/**
+		 * Sets the scope(s) used for the client.
+		 *
+		 * @param scope the scope(s) used for the client
+		 * @return the {@link Builder}
+		 */
 		public Builder scope(String... scope) {
 			if (scope != null && scope.length > 0) {
-				this.scope = Collections.unmodifiableSet(
+				this.scopes = Collections.unmodifiableSet(
 						new LinkedHashSet<>(Arrays.asList(scope)));
 			}
 			return this;
 		}
 
+		/**
+		 * Sets the scope(s) used for the client.
+		 *
+		 * @param scope the scope(s) used for the client
+		 * @return the {@link Builder}
+		 */
+		public Builder scope(Collection<String> scope) {
+			if (scope != null && !scope.isEmpty()) {
+				this.scopes = Collections.unmodifiableSet(
+						new LinkedHashSet<>(scope));
+			}
+			return this;
+		}
+
+		/**
+		 * Sets the uri for the authorization endpoint.
+		 *
+		 * @param authorizationUri the uri for the authorization endpoint
+		 * @return the {@link Builder}
+		 */
 		public Builder authorizationUri(String authorizationUri) {
 			this.authorizationUri = authorizationUri;
 			return this;
 		}
 
+		/**
+		 * Sets the uri for the token endpoint.
+		 *
+		 * @param tokenUri the uri for the token endpoint
+		 * @return the {@link Builder}
+		 */
 		public Builder tokenUri(String tokenUri) {
 			this.tokenUri = tokenUri;
 			return this;
 		}
 
+		/**
+		 * Sets the uri for the user info endpoint.
+		 *
+		 * @param userInfoUri the uri for the user info endpoint
+		 * @return the {@link Builder}
+		 */
 		public Builder userInfoUri(String userInfoUri) {
 			this.userInfoUri = userInfoUri;
 			return this;
 		}
 
+		/**
+		 * Sets the attribute name used to access the user's name from the user info response.
+		 *
+		 * @param userNameAttributeName the attribute name used to access the user's name from the user info response
+		 * @return the {@link Builder}
+		 */
+		public Builder userNameAttributeName(String userNameAttributeName) {
+			this.userNameAttributeName = userNameAttributeName;
+			return this;
+		}
+
+		/**
+		 * Sets the uri for the JSON Web Key (JWK) Set endpoint.
+		 *
+		 * @param jwkSetUri the uri for the JSON Web Key (JWK) Set endpoint
+		 * @return the {@link Builder}
+		 */
 		public Builder jwkSetUri(String jwkSetUri) {
 			this.jwkSetUri = jwkSetUri;
 			return this;
 		}
 
+		/**
+		 * Sets the logical name of the client or registration.
+		 *
+		 * @param clientName the client or registration name
+		 * @return the {@link Builder}
+		 */
 		public Builder clientName(String clientName) {
 			this.clientName = clientName;
 			return this;
 		}
 
-		public Builder clientAlias(String clientAlias) {
-			this.clientAlias = clientAlias;
-			return this;
+		/**
+		 * Builds a new {@link ClientRegistration}.
+		 *
+		 * @return a {@link ClientRegistration}
+		 */
+		public ClientRegistration build() {
+			Assert.notNull(this.authorizationGrantType, "authorizationGrantType cannot be null");
+			if (AuthorizationGrantType.IMPLICIT.equals(this.authorizationGrantType)) {
+				this.validateImplicitGrantType();
+			} else {
+				this.validateAuthorizationCodeGrantType();
+			}
+			return this.create();
 		}
 
-		public ClientRegistration build() {
-			this.validateClientWithAuthorizationCodeGrantType();
+		private ClientRegistration create() {
 			ClientRegistration clientRegistration = new ClientRegistration();
-			this.setProperties(clientRegistration);
+
+			clientRegistration.registrationId = this.registrationId;
+			clientRegistration.clientId = this.clientId;
+			clientRegistration.clientSecret = this.clientSecret;
+			clientRegistration.clientAuthenticationMethod = this.clientAuthenticationMethod;
+			clientRegistration.authorizationGrantType = this.authorizationGrantType;
+			clientRegistration.redirectUriTemplate = this.redirectUriTemplate;
+			clientRegistration.scopes = this.scopes;
+
+			ProviderDetails providerDetails = clientRegistration.new ProviderDetails();
+			providerDetails.authorizationUri = this.authorizationUri;
+			providerDetails.tokenUri = this.tokenUri;
+			providerDetails.userInfoEndpoint.uri = this.userInfoUri;
+			providerDetails.userInfoEndpoint.userNameAttributeName = this.userNameAttributeName;
+			providerDetails.jwkSetUri = this.jwkSetUri;
+			clientRegistration.providerDetails = providerDetails;
+
+			clientRegistration.clientName = this.clientName;
+
 			return clientRegistration;
 		}
 
-		protected void setProperties(ClientRegistration clientRegistration) {
-			clientRegistration.setClientId(this.clientId);
-			clientRegistration.setClientSecret(this.clientSecret);
-			clientRegistration.setClientAuthenticationMethod(this.clientAuthenticationMethod);
-			clientRegistration.setAuthorizationGrantType(this.authorizationGrantType);
-			clientRegistration.setRedirectUri(this.redirectUri);
-			clientRegistration.setScope(this.scope);
-
-			ProviderDetails providerDetails = clientRegistration.new ProviderDetails();
-			providerDetails.setAuthorizationUri(this.authorizationUri);
-			providerDetails.setTokenUri(this.tokenUri);
-			providerDetails.setUserInfoUri(this.userInfoUri);
-			providerDetails.setJwkSetUri(this.jwkSetUri);
-			clientRegistration.setProviderDetails(providerDetails);
-
-			clientRegistration.setClientName(this.clientName);
-			clientRegistration.setClientAlias(this.clientAlias);
-		}
-
-		protected void validateClientWithAuthorizationCodeGrantType() {
+		private void validateAuthorizationCodeGrantType() {
 			Assert.isTrue(AuthorizationGrantType.AUTHORIZATION_CODE.equals(this.authorizationGrantType),
-				"authorizationGrantType must be " + AuthorizationGrantType.AUTHORIZATION_CODE.getValue());
+					() -> "authorizationGrantType must be " + AuthorizationGrantType.AUTHORIZATION_CODE.getValue());
+			Assert.hasText(this.registrationId, "registrationId cannot be empty");
 			Assert.hasText(this.clientId, "clientId cannot be empty");
 			Assert.hasText(this.clientSecret, "clientSecret cannot be empty");
 			Assert.notNull(this.clientAuthenticationMethod, "clientAuthenticationMethod cannot be null");
-			Assert.hasText(this.redirectUri, "redirectUri cannot be empty");
-			Assert.notEmpty(this.scope, "scope cannot be empty");
+			Assert.hasText(this.redirectUriTemplate, "redirectUriTemplate cannot be empty");
+			Assert.notEmpty(this.scopes, "scopes cannot be empty");
 			Assert.hasText(this.authorizationUri, "authorizationUri cannot be empty");
 			Assert.hasText(this.tokenUri, "tokenUri cannot be empty");
-			Assert.hasText(this.userInfoUri, "userInfoUri cannot be empty");
+			if (this.scopes.contains(OidcScopes.OPENID)) {
+				// OIDC Clients need to verify/validate the ID Token
+				Assert.hasText(this.jwkSetUri, "jwkSetUri cannot be empty");
+			}
 			Assert.hasText(this.clientName, "clientName cannot be empty");
-			Assert.hasText(this.clientAlias, "clientAlias cannot be empty");
+		}
+
+		private void validateImplicitGrantType() {
+			Assert.isTrue(AuthorizationGrantType.IMPLICIT.equals(this.authorizationGrantType),
+					() -> "authorizationGrantType must be " + AuthorizationGrantType.IMPLICIT.getValue());
+			Assert.hasText(this.registrationId, "registrationId cannot be empty");
+			Assert.hasText(this.clientId, "clientId cannot be empty");
+			Assert.hasText(this.redirectUriTemplate, "redirectUriTemplate cannot be empty");
+			Assert.notEmpty(this.scopes, "scopes cannot be empty");
+			Assert.hasText(this.authorizationUri, "authorizationUri cannot be empty");
+			Assert.hasText(this.clientName, "clientName cannot be empty");
 		}
 	}
 }

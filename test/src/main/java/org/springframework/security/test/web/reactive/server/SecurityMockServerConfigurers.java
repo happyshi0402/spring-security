@@ -1,19 +1,17 @@
 /*
+ * Copyright 2002-2017 the original author or authors.
  *
- *  * Copyright 2002-2017 the original author or authors.
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  *      http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.springframework.security.test.web.reactive.server;
@@ -23,9 +21,13 @@ import org.springframework.lang.Nullable;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.test.context.TestSecurityContextHolder;
+import org.springframework.security.web.server.csrf.CsrfWebFilter;
+import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher;
 import org.springframework.test.web.reactive.server.MockServerConfigurer;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.test.web.reactive.server.WebTestClientConfigurer;
@@ -35,16 +37,14 @@ import org.springframework.web.server.WebFilterChain;
 import org.springframework.web.server.adapter.WebHttpHandlerBuilder;
 import reactor.core.publisher.Mono;
 
-import java.security.Principal;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
  * Test utilities for working with Spring Security and
- * {{@link org.springframework.test.web.reactive.server.WebTestClient.Builder#apply(WebTestClientConfigurer)}}.
+ * {@link org.springframework.test.web.reactive.server.WebTestClient.Builder#apply(WebTestClientConfigurer)}.
  *
  * @author Rob Winch
  * @since 5.0
@@ -60,30 +60,19 @@ public class SecurityMockServerConfigurers {
 			public void beforeServerCreated(WebHttpHandlerBuilder builder) {
 				builder.filters( filters -> {
 					filters.add(0, new MutatorFilter());
-					filters.add(0, new SetupMutatorFilter(createMutator( () -> TestSecurityContextHolder.getContext().getAuthentication())));
 				});
 			}
 		};
 	}
 
 	/**
-	 * Updates the ServerWebExchange to use the provided Principal
-	 *
-	 * @param principal the principal to use.
-	 * @return the {@link WebTestClientConfigurer} to use
-	 */
-	public static <T extends WebTestClientConfigurer & MockServerConfigurer> T mockPrincipal(Principal principal) {
-		return (T) new MutatorWebTestClientConfigurer(createMutator(() -> principal));
-	}
-
-	/**
 	 * Updates the ServerWebExchange to use the provided Authentication as the Principal
 	 *
 	 * @param authentication the Authentication to use.
-	 * @return the {@link WebTestClientConfigurer}} to use
+	 * @return the configurer to use
 	 */
 	public static <T extends WebTestClientConfigurer & MockServerConfigurer> T mockAuthentication(Authentication authentication) {
-		return mockPrincipal(authentication);
+		return (T) new MutatorWebTestClientConfigurer(() -> Mono.just(authentication).map(SecurityContextImpl::new));
 	}
 
 	/**
@@ -91,7 +80,7 @@ public class SecurityMockServerConfigurers {
 	 * the Principal
 	 *
 	 * @param userDetails the UserDetails to use.
-	 * @return the {@link WebTestClientConfigurer} to use
+	 * @return the configurer to use
 	 */
 	public static <T extends WebTestClientConfigurer & MockServerConfigurer> T mockUser(UserDetails userDetails) {
 		return mockAuthentication(new UsernamePasswordAuthenticationToken(userDetails, userDetails.getPassword(), userDetails.getAuthorities()));
@@ -120,8 +109,33 @@ public class SecurityMockServerConfigurers {
 		return new UserExchangeMutator(username);
 	}
 
-	private static Function<ServerWebExchange, ServerWebExchange> createMutator(Supplier<Principal> principal) {
-		return m -> principal.get() == null ? m : m.mutate().principal(Mono.just(principal.get())).build();
+	public static CsrfMutator csrf() {
+		return new CsrfMutator();
+	}
+
+	public static class CsrfMutator implements WebTestClientConfigurer, MockServerConfigurer {
+
+		@Override
+		public void afterConfigurerAdded(WebTestClient.Builder builder,
+			@Nullable WebHttpHandlerBuilder httpHandlerBuilder,
+			@Nullable ClientHttpConnector connector) {
+			CsrfWebFilter filter = new CsrfWebFilter();
+			filter.setRequireCsrfProtectionMatcher( e -> ServerWebExchangeMatcher.MatchResult.notMatch());
+			httpHandlerBuilder.filters( filters -> filters.add(0, filter));
+		}
+
+		@Override
+		public void afterConfigureAdded(
+			WebTestClient.MockServerSpec<?> serverSpec) {
+
+		}
+
+		@Override
+		public void beforeServerCreated(WebHttpHandlerBuilder builder) {
+
+		}
+
+		private CsrfMutator() {}
 	}
 
 	/**
@@ -132,7 +146,7 @@ public class SecurityMockServerConfigurers {
 		private final User.UserBuilder userBuilder;
 
 		private UserExchangeMutator(String username) {
-			userBuilder = User.withUsername(username);
+			this.userBuilder = User.withUsername(username);
 			password("password");
 			roles("USER");
 		}
@@ -143,7 +157,7 @@ public class SecurityMockServerConfigurers {
 		 * @return the UserExchangeMutator
 		 */
 		public UserExchangeMutator password(String password) {
-			userBuilder.password(password);
+			this.userBuilder.password(password);
 			return this;
 		}
 
@@ -155,7 +169,7 @@ public class SecurityMockServerConfigurers {
 		 * @return the UserExchangeMutator
 		 */
 		public UserExchangeMutator roles(String... roles) {
-			userBuilder.roles(roles);
+			this.userBuilder.roles(roles);
 			return this;
 		}
 
@@ -166,7 +180,7 @@ public class SecurityMockServerConfigurers {
 		 * @return the UserExchangeMutator
 		 */
 		public UserExchangeMutator authorities(GrantedAuthority... authorities) {
-			userBuilder.authorities(authorities);
+			this.userBuilder.authorities(authorities);
 			return this;
 		}
 
@@ -177,7 +191,7 @@ public class SecurityMockServerConfigurers {
 		 * @return the UserExchangeMutator
 		 */
 		public UserExchangeMutator authorities(Collection<? extends GrantedAuthority> authorities) {
-			userBuilder.authorities(authorities);
+			this.userBuilder.authorities(authorities);
 			return this;
 		}
 
@@ -187,27 +201,27 @@ public class SecurityMockServerConfigurers {
 		 * @return the UserExchangeMutator
 		 */
 		public UserExchangeMutator authorities(String... authorities) {
-			userBuilder.authorities(authorities);
+			this.userBuilder.authorities(authorities);
 			return this;
 		}
 
 		public UserExchangeMutator accountExpired(boolean accountExpired) {
-			userBuilder.accountExpired(accountExpired);
+			this.userBuilder.accountExpired(accountExpired);
 			return this;
 		}
 
 		public UserExchangeMutator accountLocked(boolean accountLocked) {
-			userBuilder.accountLocked(accountLocked);
+			this.userBuilder.accountLocked(accountLocked);
 			return this;
 		}
 
 		public UserExchangeMutator credentialsExpired(boolean credentialsExpired) {
-			userBuilder.credentialsExpired(credentialsExpired);
+			this.userBuilder.credentialsExpired(credentialsExpired);
 			return this;
 		}
 
 		public UserExchangeMutator disabled(boolean disabled) {
-			userBuilder.disabled(disabled);
+			this.userBuilder.disabled(disabled);
 			return this;
 		}
 
@@ -227,17 +241,16 @@ public class SecurityMockServerConfigurers {
 		}
 
 		private <T extends WebTestClientConfigurer & MockServerConfigurer> T configurer() {
-			return mockUser(userBuilder.build());
+			return mockUser(this.userBuilder.build());
 		}
 	}
 
 	private static class MutatorWebTestClientConfigurer implements WebTestClientConfigurer, MockServerConfigurer {
-		private final Function<ServerWebExchange, ServerWebExchange> mutator;
+		private final Supplier<Mono<SecurityContext>> context;
 
-		private MutatorWebTestClientConfigurer(Function<ServerWebExchange, ServerWebExchange> mutator) {
-			this.mutator = mutator;
+		private MutatorWebTestClientConfigurer(Supplier<Mono<SecurityContext>> context) {
+			this.context = context;
 		}
-
 		@Override
 		public void beforeServerCreated(WebHttpHandlerBuilder builder) {
 			builder.filters(addSetupMutatorFilter());
@@ -249,34 +262,34 @@ public class SecurityMockServerConfigurers {
 		}
 
 		private Consumer<List<WebFilter>> addSetupMutatorFilter() {
-			return filters -> filters.add(0, new SetupMutatorFilter(mutator));
+			return filters -> filters.add(0, new SetupMutatorFilter(this.context));
 		}
 	}
 
 	private static class SetupMutatorFilter implements WebFilter {
-		private final Function<ServerWebExchange, ServerWebExchange> mutator;
+		private final Supplier<Mono<SecurityContext>> context;
 
-		private SetupMutatorFilter(Function<ServerWebExchange, ServerWebExchange> mutator) {
-			this.mutator = mutator;
+		private SetupMutatorFilter(Supplier<Mono<SecurityContext>> context) {
+			this.context = context;
 		}
 
 		@Override
 		public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain webFilterChain) {
-			exchange.getAttributes().computeIfAbsent(MutatorFilter.ATTRIBUTE_NAME, key -> mutator);
+			exchange.getAttributes().computeIfAbsent(MutatorFilter.ATTRIBUTE_NAME, key -> this.context);
 			return webFilterChain.filter(exchange);
 		}
 	}
 
 	private static class MutatorFilter implements WebFilter {
-
-		public static final String ATTRIBUTE_NAME = "mutator";
+		public static final String ATTRIBUTE_NAME = "context";
 
 		@Override
 		public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain webFilterChain) {
-			Function<ServerWebExchange, ServerWebExchange> mutator = exchange.getAttribute(ATTRIBUTE_NAME);
-			if(mutator != null) {
+			Supplier<Mono<SecurityContext>> context = exchange.getAttribute(ATTRIBUTE_NAME);
+			if(context != null) {
 				exchange.getAttributes().remove(ATTRIBUTE_NAME);
-				exchange = mutator.apply(exchange);
+				return webFilterChain.filter(exchange)
+					.subscriberContext(ReactiveSecurityContextHolder.withSecurityContext(context.get()));
 			}
 			return webFilterChain.filter(exchange);
 		}

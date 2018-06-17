@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,59 +19,52 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.SpringSecurityCoreVersion;
-import org.springframework.security.core.authority.AuthorityUtils;
-import org.springframework.security.oauth2.client.registration.ClientRegistration;
-import org.springframework.security.oauth2.client.user.OAuth2UserService;
-import org.springframework.security.oauth2.core.AccessToken;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.security.oauth2.oidc.core.IdToken;
 import org.springframework.util.Assert;
 
 import java.util.Collection;
 
 /**
  * An implementation of an {@link AbstractAuthenticationToken}
- * that represents an <i>OAuth 2.0</i> {@link Authentication}.
- *
+ * that represents an OAuth 2.0 {@link Authentication}.
  * <p>
- * It associates an {@link OAuth2User}, {@link ClientRegistration}, {@link AccessToken} and optionally an {@link IdToken}.
- * This <code>Authentication</code> is considered <i>&quot;authenticated&quot;</i> if the {@link OAuth2User}
- * is provided in the respective constructor. This typically happens after the {@link OAuth2UserService}
- * retrieves the end-user's (resource owner) attributes from the <i>UserInfo Endpoint</i>.
+ * The {@link Authentication} associates an {@link OAuth2User} {@code Principal}
+ * to the identifier of the {@link #getAuthorizedClientRegistrationId() Authorized Client},
+ * which the End-User ({@code Principal}) granted authorization to
+ * so that it can access it's protected resources at the UserInfo Endpoint.
  *
  * @author Joe Grandja
  * @since 5.0
+ * @see AbstractAuthenticationToken
  * @see OAuth2User
- * @see ClientRegistration
- * @see AccessToken
- * @see IdToken
+ * @see OAuth2AuthorizedClient
  */
 public class OAuth2AuthenticationToken extends AbstractAuthenticationToken {
 	private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
 	private final OAuth2User principal;
-	private final ClientRegistration clientRegistration;
-	private final AccessToken accessToken;
-	private final IdToken idToken;
+	private final String authorizedClientRegistrationId;
 
-	public OAuth2AuthenticationToken(ClientRegistration clientRegistration, AccessToken accessToken, IdToken idToken) {
-		this(null, AuthorityUtils.NO_AUTHORITIES, clientRegistration, accessToken, idToken);
-	}
-
-	public OAuth2AuthenticationToken(OAuth2User principal, Collection<? extends GrantedAuthority> authorities,
-										ClientRegistration clientRegistration, AccessToken accessToken, IdToken idToken) {
-
+	/**
+	 * Constructs an {@code OAuth2AuthenticationToken} using the provided parameters.
+	 *
+	 * @param principal the user {@code Principal} registered with the OAuth 2.0 Provider
+	 * @param authorities the authorities granted to the user
+	 * @param authorizedClientRegistrationId the registration identifier of the {@link OAuth2AuthorizedClient Authorized Client}
+	 */
+	public OAuth2AuthenticationToken(OAuth2User principal,
+									Collection<? extends GrantedAuthority> authorities,
+									String authorizedClientRegistrationId) {
 		super(authorities);
-		Assert.notNull(clientRegistration, "clientRegistration cannot be null");
-		Assert.notNull(accessToken, "accessToken cannot be null");
+		Assert.notNull(principal, "principal cannot be null");
+		Assert.hasText(authorizedClientRegistrationId, "authorizedClientRegistrationId cannot be empty");
 		this.principal = principal;
-		this.clientRegistration = clientRegistration;
-		this.accessToken = accessToken;
-		this.idToken = idToken;
-		this.setAuthenticated(principal != null);
+		this.authorizedClientRegistrationId = authorizedClientRegistrationId;
+		this.setAuthenticated(true);
 	}
 
 	@Override
-	public Object getPrincipal() {
+	public OAuth2User getPrincipal() {
 		return this.principal;
 	}
 
@@ -81,15 +74,12 @@ public class OAuth2AuthenticationToken extends AbstractAuthenticationToken {
 		return "";
 	}
 
-	public ClientRegistration getClientRegistration() {
-		return this.clientRegistration;
-	}
-
-	public AccessToken getAccessToken() {
-		return this.accessToken;
-	}
-
-	public IdToken getIdToken() {
-		return this.idToken;
+	/**
+	 * Returns the registration identifier of the {@link OAuth2AuthorizedClient Authorized Client}.
+	 *
+	 * @return the registration identifier of the Authorized Client.
+	 */
+	public String getAuthorizedClientRegistrationId() {
+		return this.authorizedClientRegistrationId;
 	}
 }

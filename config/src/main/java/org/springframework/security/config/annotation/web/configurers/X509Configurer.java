@@ -121,7 +121,7 @@ public final class X509Configurer<H extends HttpSecurityBuilder<H>> extends
 	 * @return the {@link X509Configurer} for further customizations
 	 */
 	public X509Configurer<H> userDetailsService(UserDetailsService userDetailsService) {
-		UserDetailsByNameServiceWrapper<PreAuthenticatedAuthenticationToken> authenticationUserDetailsService = new UserDetailsByNameServiceWrapper<PreAuthenticatedAuthenticationToken>();
+		UserDetailsByNameServiceWrapper<PreAuthenticatedAuthenticationToken> authenticationUserDetailsService = new UserDetailsByNameServiceWrapper<>();
 		authenticationUserDetailsService.setUserDetailsService(userDetailsService);
 		return authenticationUserDetailsService(authenticationUserDetailsService);
 	}
@@ -163,7 +163,7 @@ public final class X509Configurer<H extends HttpSecurityBuilder<H>> extends
 
 		http
 			.authenticationProvider(authenticationProvider)
-			.setSharedObject(AuthenticationEntryPoint.class,new Http403ForbiddenEntryPoint());
+			.setSharedObject(AuthenticationEntryPoint.class, new Http403ForbiddenEntryPoint());
 	}
 	// @formatter:on
 

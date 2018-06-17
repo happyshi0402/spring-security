@@ -35,7 +35,7 @@ public class RoleHierarchyImplTests {
 	@Test
 	public void testRoleHierarchyWithNullOrEmptyAuthorities() {
 		List<GrantedAuthority> authorities0 = null;
-		List<GrantedAuthority> authorities1 = new ArrayList<GrantedAuthority>();
+		List<GrantedAuthority> authorities1 = new ArrayList<>();
 
 		RoleHierarchyImpl roleHierarchyImpl = new RoleHierarchyImpl();
 		roleHierarchyImpl.setHierarchy("ROLE_A > ROLE_B");
@@ -44,12 +44,11 @@ public class RoleHierarchyImplTests {
 				authorities0)).isNotNull();
 		assertThat(
 				roleHierarchyImpl.getReachableGrantedAuthorities(authorities0)).isEmpty();
-		;
+
 		assertThat(roleHierarchyImpl.getReachableGrantedAuthorities(
 				authorities1)).isNotNull();
 		assertThat(
 				roleHierarchyImpl.getReachableGrantedAuthorities(authorities1)).isEmpty();
-		;
 	}
 
 	@Test
@@ -210,5 +209,28 @@ public class RoleHierarchyImplTests {
 				HierarchicalRolesTestHelper.containTheSameGrantedAuthoritiesCompareByAuthorityString(
 						roleHierarchyImpl.getReachableGrantedAuthorities(authorities2),
 						authorities2)).isTrue();
+	}
+
+	@Test
+	public void testWhitespaceRoleHierarchies() {
+		List<GrantedAuthority> authorities1 = AuthorityUtils.createAuthorityList(
+				"ROLE A");
+		List<GrantedAuthority> authorities2 = AuthorityUtils.createAuthorityList("ROLE A",
+				"ROLE B", "ROLE>C");
+		List<GrantedAuthority> authorities3 = AuthorityUtils.createAuthorityList("ROLE A",
+				"ROLE B", "ROLE>C", "ROLE D");
+
+		RoleHierarchyImpl roleHierarchyImpl = new RoleHierarchyImpl();
+
+		roleHierarchyImpl.setHierarchy("ROLE A > ROLE B\nROLE B > ROLE>C");
+		assertThat(HierarchicalRolesTestHelper.containTheSameGrantedAuthorities(
+				roleHierarchyImpl.getReachableGrantedAuthorities(authorities1),
+				authorities2)).isTrue();
+
+		roleHierarchyImpl.setHierarchy(
+				"ROLE A > ROLE B\nROLE B > ROLE>C\nROLE>C > ROLE D");
+		assertThat(HierarchicalRolesTestHelper.containTheSameGrantedAuthorities(
+				roleHierarchyImpl.getReachableGrantedAuthorities(authorities1),
+				authorities3)).isTrue();
 	}
 }

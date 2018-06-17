@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
- * Support classes/interfaces for authenticating an <i>end-user</i>
- * with an <i>authorization server</i> using a specific <i>authorization grant flow</i>.
+ * Support classes and interfaces for authenticating and authorizing a client
+ * with an OAuth 2.0 Authorization Server using a specific authorization grant flow.
  */
 package org.springframework.security.oauth2.client.authentication;

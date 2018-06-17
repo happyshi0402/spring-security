@@ -175,7 +175,7 @@ public final class ActiveDirectoryLdapAuthenticationProvider extends
 			logger.debug("'memberOf' attribute values: " + Arrays.asList(groups));
 		}
 
-		ArrayList<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>(
+		ArrayList<GrantedAuthority> authorities = new ArrayList<>(
 				groups.length);
 
 		for (String group : groups) {
@@ -190,7 +190,7 @@ public final class ActiveDirectoryLdapAuthenticationProvider extends
 		// TODO. add DNS lookup based on domain
 		final String bindUrl = url;
 
-		Hashtable<String, String> env = new Hashtable<String, String>();
+		Hashtable<String, String> env = new Hashtable<>();
 		env.put(Context.SECURITY_AUTHENTICATION, "simple");
 		String bindPrincipal = createBindPrincipal(username);
 		env.put(Context.SECURITY_PRINCIPAL, bindPrincipal);
@@ -312,7 +312,7 @@ public final class ActiveDirectoryLdapAuthenticationProvider extends
 		try {
 			return SpringSecurityLdapTemplate.searchForSingleEntryInternal(context,
 					searchControls, searchRoot, searchFilter,
-					new Object[] { bindPrincipal });
+					new Object[] { bindPrincipal, username });
 		}
 		catch (IncorrectResultSizeDataAccessException incorrectResults) {
 			// Search should never return multiple results if properly configured - just
@@ -383,7 +383,8 @@ public final class ActiveDirectoryLdapAuthenticationProvider extends
 
 	/**
 	 * The LDAP filter string to search for the user being authenticated. Occurrences of
-	 * {0} are replaced with the {@code username@domain}.
+	 * {0} are replaced with the {@code username@domain}. Occurrences of {1} are replaced
+	 * with the {@code username} only.
 	 * <p>
 	 * Defaults to: {@code (&(objectClass=user)(userPrincipalName= 0}))}
 	 * </p>

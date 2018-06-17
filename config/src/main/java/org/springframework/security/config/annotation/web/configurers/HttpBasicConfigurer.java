@@ -97,7 +97,7 @@ public final class HttpBasicConfigurer<B extends HttpSecurityBuilder<B>> extends
 	public HttpBasicConfigurer() throws Exception {
 		realmName(DEFAULT_REALM);
 
-		LinkedHashMap<RequestMatcher, AuthenticationEntryPoint> entryPoints = new LinkedHashMap<RequestMatcher, AuthenticationEntryPoint>();
+		LinkedHashMap<RequestMatcher, AuthenticationEntryPoint> entryPoints = new LinkedHashMap<>();
 		entryPoints.put(X_REQUESTED_WITH, new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED));
 
 		DelegatingAuthenticationEntryPoint defaultEntryPoint = new DelegatingAuthenticationEntryPoint(
@@ -125,7 +125,7 @@ public final class HttpBasicConfigurer<B extends HttpSecurityBuilder<B>> extends
 	 * The {@link AuthenticationEntryPoint} to be populated on
 	 * {@link BasicAuthenticationFilter} in the event that authentication fails. The
 	 * default to use {@link BasicAuthenticationEntryPoint} with the realm
-	 * "Spring Security Application".
+	 * "Realm".
 	 *
 	 * @param authenticationEntryPoint the {@link AuthenticationEntryPoint} to use
 	 * @return {@link HttpBasicConfigurer} for additional customization
@@ -169,13 +169,16 @@ public final class HttpBasicConfigurer<B extends HttpSecurityBuilder<B>> extends
 				MediaType.MULTIPART_FORM_DATA, MediaType.TEXT_XML);
 		restMatcher.setIgnoredMediaTypes(Collections.singleton(MediaType.ALL));
 
+		MediaTypeRequestMatcher allMatcher = new MediaTypeRequestMatcher(contentNegotiationStrategy, MediaType.ALL);
+		allMatcher.setUseEquals(true);
+
 		RequestMatcher notHtmlMatcher = new NegatedRequestMatcher(
 				new MediaTypeRequestMatcher(contentNegotiationStrategy,
 						MediaType.TEXT_HTML));
 		RequestMatcher restNotHtmlMatcher = new AndRequestMatcher(
 				Arrays.<RequestMatcher>asList(notHtmlMatcher, restMatcher));
 
-		RequestMatcher preferredMatcher = new OrRequestMatcher(Arrays.asList(X_REQUESTED_WITH, restNotHtmlMatcher));
+		RequestMatcher preferredMatcher = new OrRequestMatcher(Arrays.asList(X_REQUESTED_WITH, restNotHtmlMatcher, allMatcher));
 
 		registerDefaultEntryPoint(http, preferredMatcher);
 		registerDefaultLogoutSuccessHandler(http, preferredMatcher);

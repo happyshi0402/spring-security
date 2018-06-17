@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * A representation of a user <code>Principal</code>
- * that is registered with a standard <i>OAuth 2.0 Provider</i>.
+ * A representation of a user {@code Principal}
+ * that is registered with an OAuth 2.0 Provider.
  *
  * <p>
  * An OAuth 2.0 user is composed of one or more attributes, for example,
@@ -33,7 +33,7 @@ import java.util.Map;
  * is keyed by the &quot;name&quot; in {@link #getAttributes()}.
  *
  * <p>
- * <b>NOTE:</b> Attribute names are <b><i>not</i></b> standardized between providers and therefore will vary.
+ * <b>NOTE:</b> Attribute names are <b>not</b> standardized between providers and therefore will vary.
  * Please consult the provider's API documentation for the set of supported user attribute names.
  *
  * <p>
@@ -48,8 +48,18 @@ import java.util.Map;
  */
 public interface OAuth2User extends AuthenticatedPrincipal {
 
+	/**
+	 * Returns the authorities granted to the user.
+	 *
+	 * @return a {@code Collection} of {@link GrantedAuthority}(s)
+	 */
 	Collection<? extends GrantedAuthority> getAuthorities();
 
+	/**
+	 * Returns the attributes about the user.
+	 *
+	 * @return a {@code Map} of attributes about the user
+	 */
 	Map<String, Object> getAttributes();
 
 }

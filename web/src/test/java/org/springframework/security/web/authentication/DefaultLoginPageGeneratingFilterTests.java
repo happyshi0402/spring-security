@@ -18,6 +18,7 @@ package org.springframework.security.web.authentication;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
+import java.util.Collections;
 import java.util.Locale;
 
 import javax.servlet.FilterChain;
@@ -41,7 +42,7 @@ import org.springframework.security.web.authentication.ui.DefaultLoginPageGenera
  * @since 3.0
  */
 public class DefaultLoginPageGeneratingFilterTests {
-	FilterChain chain = mock(FilterChain.class);
+	private FilterChain chain = mock(FilterChain.class);
 
 	@Test
 	public void generatingPageWithAuthenticationProcessingFilterOnlyIsSuccessFul()
@@ -117,6 +118,20 @@ public class DefaultLoginPageGeneratingFilterTests {
 	}
 
 	@Test
+	public void generatesForWithContentLength() throws Exception {
+		DefaultLoginPageGeneratingFilter filter = new DefaultLoginPageGeneratingFilter(
+				new UsernamePasswordAuthenticationFilter());
+		filter.setOauth2LoginEnabled(true);
+		filter.setOauth2AuthenticationUrlToClientName(Collections.singletonMap("XYUU",
+				"\u8109\u640F\u7F51\u5E10\u6237\u767B\u5F55"));
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		MockHttpServletRequest request = new MockHttpServletRequest("GET", "/login");
+		filter.doFilter(request, response, chain);
+		assertThat(response.getContentLength() == response.getContentAsString().getBytes(
+				response.getCharacterEncoding()).length).isTrue();
+	}
+
+	@Test
 	public void generatesForWithQueryNoMatch() throws Exception {
 		DefaultLoginPageGeneratingFilter filter = new DefaultLoginPageGeneratingFilter(
 				new UsernamePasswordAuthenticationFilter());
@@ -142,7 +157,7 @@ public class DefaultLoginPageGeneratingFilterTests {
 	@SuppressWarnings("unused")
 	private static class MockProcessingFilter extends
 			AbstractAuthenticationProcessingFilter {
-		protected MockProcessingFilter() {
+		MockProcessingFilter() {
 			super("/someurl");
 		}
 
@@ -172,5 +187,22 @@ public class DefaultLoginPageGeneratingFilterTests {
 				new BadCredentialsException(message));
 
 		filter.doFilter(request, new MockHttpServletResponse(), chain);
+	}
+
+	// gh-5394
+	@Test
+	public void generatesForOAuth2LoginAndEscapesClientName() throws Exception {
+		DefaultLoginPageGeneratingFilter filter = new DefaultLoginPageGeneratingFilter();
+		filter.setLoginPageUrl(DefaultLoginPageGeneratingFilter.DEFAULT_LOGIN_PAGE_URL);
+		filter.setOauth2LoginEnabled(true);
+
+		String clientName = "Google < > \" \' &";
+		filter.setOauth2AuthenticationUrlToClientName(
+			Collections.singletonMap("/oauth2/authorization/google", clientName));
+
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		filter.doFilter(new MockHttpServletRequest("GET", "/login"), response, chain);
+
+		assertThat(response.getContentAsString()).contains("<a href=\"/oauth2/authorization/google\">Google &lt; &gt; &quot; &#39; &amp;</a>");
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareOnlyThisForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -50,6 +51,7 @@ import org.springframework.util.StringUtils;
 @SuppressWarnings("unchecked")
 @RunWith(PowerMockRunner.class)
 @PrepareOnlyThisForTest(ReflectionUtils.class)
+@PowerMockIgnore("javax.security.auth.*")
 public class AbstractRememberMeServicesTests {
 
 	static User joe = new User("joe", "password", true, true, true, true,
@@ -88,7 +90,7 @@ public class AbstractRememberMeServicesTests {
 
 	@Test
 	public void cookieShouldBeCorrectlyEncodedAndDecoded() throws Exception {
-		String[] cookie = new String[] { "name", "cookie", "tokens", "blah" };
+		String[] cookie = new String[] { "name:with:colon", "cookie", "tokens", "blah" };
 		MockRememberMeServices services = new MockRememberMeServices(uds);
 
 		String encoded = services.encodeCookie(cookie);
@@ -96,11 +98,7 @@ public class AbstractRememberMeServicesTests {
 		assertThat(encoded.endsWith("=")).isFalse();
 		String[] decoded = services.decodeCookie(encoded);
 
-		assertThat(decoded.length).isEqualTo(4);
-		assertThat(decoded[0]).isEqualTo("name");
-		assertThat(decoded[1]).isEqualTo("cookie");
-		assertThat(decoded[2]).isEqualTo("tokens");
-		assertThat(decoded[3]).isEqualTo("blah");
+		assertThat(decoded).containsExactly("name:with:colon", "cookie", "tokens", "blah");
 	}
 
 	@Test
@@ -110,13 +108,13 @@ public class AbstractRememberMeServicesTests {
 		MockRememberMeServices services = new MockRememberMeServices(uds);
 
 		String[] decoded = services.decodeCookie(services.encodeCookie(cookie));
-		assertThat(decoded.length).isEqualTo(4);
+		assertThat(decoded).hasSize(4);
 		assertThat(decoded[0]).isEqualTo("http://id.openid.zz");
 
 		// Check https (SEC-1410)
 		cookie[0] = "https://id.openid.zz";
 		decoded = services.decodeCookie(services.encodeCookie(cookie));
-		assertThat(decoded.length).isEqualTo(4);
+		assertThat(decoded).hasSize(4);
 		assertThat(decoded[0]).isEqualTo("https://id.openid.zz");
 	}
 
@@ -423,7 +421,7 @@ public class AbstractRememberMeServicesTests {
 
 		Cookie cookie = response.getCookie(
 				AbstractRememberMeServices.SPRING_SECURITY_REMEMBER_ME_COOKIE_KEY);
-		assertThat(cookie.getVersion()).isEqualTo(0);
+		assertThat(cookie.getVersion()).isZero();
 	}
 
 	@Test
@@ -455,7 +453,7 @@ public class AbstractRememberMeServicesTests {
 		Cookie returnedCookie = response.getCookie(
 				AbstractRememberMeServices.SPRING_SECURITY_REMEMBER_ME_COOKIE_KEY);
 		assertThat(returnedCookie).isNotNull();
-		assertThat(returnedCookie.getMaxAge()).isEqualTo(0);
+		assertThat(returnedCookie.getMaxAge()).isZero();
 	}
 
 	// ~ Inner Classes

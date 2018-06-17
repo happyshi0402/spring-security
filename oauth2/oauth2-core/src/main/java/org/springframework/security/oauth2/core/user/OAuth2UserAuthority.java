@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * A {@link GrantedAuthority} that is associated with an {@link OAuth2User}.
+ * A {@link GrantedAuthority} that may be associated to an {@link OAuth2User}.
  *
  * @author Joe Grandja
  * @since 5.0
@@ -33,17 +33,29 @@ import java.util.Map;
 public class OAuth2UserAuthority implements GrantedAuthority {
 	private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
 	private final String authority;
-	private Map<String, Object> attributes;
+	private final Map<String, Object> attributes;
 
+	/**
+	 * Constructs a {@code OAuth2UserAuthority} using the provided parameters
+	 * and defaults {@link #getAuthority()} to {@code ROLE_USER}.
+	 *
+	 * @param attributes the attributes about the user
+	 */
 	public OAuth2UserAuthority(Map<String, Object> attributes) {
 		this("ROLE_USER", attributes);
 	}
 
+	/**
+	 * Constructs a {@code OAuth2UserAuthority} using the provided parameters.
+	 *
+	 * @param authority the authority granted to the user
+	 * @param attributes the attributes about the user
+	 */
 	public OAuth2UserAuthority(String authority, Map<String, Object> attributes) {
 		Assert.hasText(authority, "authority cannot be empty");
 		Assert.notEmpty(attributes, "attributes cannot be empty");
 		this.authority = authority;
-		this.setAttributes(attributes);
+		this.attributes = Collections.unmodifiableMap(new LinkedHashMap<>(attributes));
 	}
 
 	@Override
@@ -51,13 +63,13 @@ public class OAuth2UserAuthority implements GrantedAuthority {
 		return this.authority;
 	}
 
+	/**
+	 * Returns the attributes about the user.
+	 *
+	 * @return a {@code Map} of attributes about the user
+	 */
 	public Map<String, Object> getAttributes() {
 		return this.attributes;
-	}
-
-	protected final void setAttributes(Map<String, Object> attributes) {
-		Assert.notEmpty(attributes, "attributes cannot be empty");
-		this.attributes = Collections.unmodifiableMap(new LinkedHashMap<>(attributes));
 	}
 
 	@Override

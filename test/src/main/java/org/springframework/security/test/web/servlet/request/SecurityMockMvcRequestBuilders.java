@@ -90,6 +90,7 @@ public final class SecurityMockMvcRequestBuilders {
 		@Override
 		public MockHttpServletRequest buildRequest(ServletContext servletContext) {
 			MockHttpServletRequest request = post(this.logoutUrl)
+					.accept(MediaType.TEXT_HTML, MediaType.ALL)
 					.buildRequest(servletContext);
 			return this.postProcessor.postProcessRequest(request);
 		}
@@ -217,7 +218,7 @@ public final class SecurityMockMvcRequestBuilders {
 		}
 
 		/**
-		 * Specify a media type to to set as the Accept header in the request.
+		 * Specify a media type to set as the Accept header in the request.
 		 *
 		 * @param acceptMediaType the {@link MediaType} to set the Accept header to.
 		 * Default is: MediaType.APPLICATION_FORM_URLENCODED

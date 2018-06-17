@@ -62,11 +62,11 @@ public class DefaultSavedRequest implements SavedRequest {
 	// ~ Instance fields
 	// ================================================================================================
 
-	private final ArrayList<SavedCookie> cookies = new ArrayList<SavedCookie>();
-	private final ArrayList<Locale> locales = new ArrayList<Locale>();
-	private final Map<String, List<String>> headers = new TreeMap<String, List<String>>(
+	private final ArrayList<SavedCookie> cookies = new ArrayList<>();
+	private final ArrayList<Locale> locales = new ArrayList<>();
+	private final Map<String, List<String>> headers = new TreeMap<>(
 			String.CASE_INSENSITIVE_ORDER);
-	private final Map<String, String[]> parameters = new TreeMap<String, String[]>();
+	private final Map<String, String[]> parameters = new TreeMap<>();
 	private final String contextPath;
 	private final String method;
 	private final String pathInfo;
@@ -163,7 +163,7 @@ public class DefaultSavedRequest implements SavedRequest {
 		List<String> values = headers.get(name);
 
 		if (values == null) {
-			values = new ArrayList<String>();
+			values = new ArrayList<>();
 			headers.put(name, values);
 		}
 
@@ -264,6 +264,7 @@ public class DefaultSavedRequest implements SavedRequest {
 		return contextPath;
 	}
 
+	@Override
 	public List<Cookie> getCookies() {
 		List<Cookie> cookieList = new ArrayList<Cookie>(cookies.size());
 
@@ -279,15 +280,18 @@ public class DefaultSavedRequest implements SavedRequest {
 	 *
 	 * @return the full URL of this request
 	 */
+	@Override
 	public String getRedirectUrl() {
 		return UrlUtils.buildFullRequestUrl(scheme, serverName, serverPort, requestURI,
 				queryString);
 	}
 
+	@Override
 	public Collection<String> getHeaderNames() {
 		return headers.keySet();
 	}
 
+	@Override
 	public List<String> getHeaderValues(String name) {
 		List<String> values = headers.get(name);
 
@@ -298,14 +302,17 @@ public class DefaultSavedRequest implements SavedRequest {
 		return values;
 	}
 
+	@Override
 	public List<Locale> getLocales() {
 		return locales;
 	}
 
+	@Override
 	public String getMethod() {
 		return method;
 	}
 
+	@Override
 	public Map<String, String[]> getParameterMap() {
 		return parameters;
 	}
@@ -314,6 +321,7 @@ public class DefaultSavedRequest implements SavedRequest {
 		return parameters.keySet();
 	}
 
+	@Override
 	public String[] getParameterValues(String name) {
 		return parameters.get(name);
 	}
@@ -385,6 +393,7 @@ public class DefaultSavedRequest implements SavedRequest {
 		}
 	}
 
+	@Override
 	public String toString() {
 		return "DefaultSavedRequest[" + getRedirectUrl() + "]";
 	}
@@ -398,8 +407,8 @@ public class DefaultSavedRequest implements SavedRequest {
 
 		private List<SavedCookie> cookies = null;
 		private List<Locale> locales = null;
-		private Map<String, List<String>> headers = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
-		private Map<String, String[]> parameters = new TreeMap<String, String[]>();
+		private Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+		private Map<String, String[]> parameters = new TreeMap<>();
 		private String contextPath;
 		private String method;
 		private String pathInfo;
@@ -494,8 +503,13 @@ public class DefaultSavedRequest implements SavedRequest {
 
 			this.headers.remove(HEADER_IF_MODIFIED_SINCE);
 			this.headers.remove(HEADER_IF_NONE_MATCH);
-			if (!ObjectUtils.isEmpty(this.headers))
-				savedRequest.headers.putAll(this.headers);
+			for (Map.Entry<String, List<String>> entry : this.headers.entrySet()) {
+				String headerName = entry.getKey();
+				List<String> headerValues = entry.getValue();
+				for (String headerValue : headerValues) {
+					savedRequest.addHeader(headerName, headerValue);
+				}
+			}
 			return savedRequest;
 		}
 	}

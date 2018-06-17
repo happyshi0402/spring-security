@@ -16,6 +16,7 @@
 package org.springframework.security.config.annotation.web.configurers
 
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.security.config.annotation.AnyObjectPostProcessor
 import org.springframework.security.config.annotation.BaseSpringSpec
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -185,13 +186,14 @@ class LogoutConfigurerTests extends BaseSpringSpec {
 		}
 	}
 
-	def "LogoutConfigurer content negotiation default redirects"() {
+	def "LogoutConfigurer content negotiation text/html redirects"() {
 		setup:
 			loadConfig(LogoutHandlerContentNegotiation)
 		when:
 			login()
 			request.method = 'POST'
 			request.servletPath = '/logout'
+			request.addHeader('Accept', 'text/html')
 			springSecurityFilterChain.doFilter(request,response,chain)
 		then:
 			response.status == 302
@@ -210,6 +212,20 @@ class LogoutConfigurerTests extends BaseSpringSpec {
 			springSecurityFilterChain.doFilter(request,response,chain)
 		then:
 			response.status == 204
+	}
+
+	// gh-4831
+	def "LogoutConfigurer content negotiation all 201"() {
+		setup:
+		loadConfig(LogoutHandlerContentNegotiation)
+		when:
+		login()
+		request.method = 'POST'
+		request.servletPath = '/logout'
+		request.addHeader('Accept', MediaType.ALL_VALUE)
+		springSecurityFilterChain.doFilter(request,response,chain)
+		then:
+		response.status == 204
 	}
 
 	@EnableWebSecurity

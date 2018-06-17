@@ -18,7 +18,6 @@ package org.springframework.security.config.annotation.authentication.configurer
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.ObjectPostProcessor;
 import org.springframework.security.config.annotation.SecurityBuilder;
-import org.springframework.security.config.annotation.SecurityConfigurer;
 import org.springframework.security.config.annotation.authentication.ProviderManagerBuilder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -70,23 +69,6 @@ abstract class AbstractDaoAuthenticationConfigurer<B extends ProviderManagerBuil
 	 */
 	@SuppressWarnings("unchecked")
 	public C passwordEncoder(PasswordEncoder passwordEncoder) {
-		provider.setPasswordEncoder(passwordEncoder);
-		return (C) this;
-	}
-
-	/**
-	 * Allows specifying the
-	 * {@link org.springframework.security.authentication.encoding.PasswordEncoder} to use
-	 * with the {@link DaoAuthenticationProvider}. The default is to use plain text.
-	 *
-	 * @param passwordEncoder The
-	 * {@link org.springframework.security.authentication.encoding.PasswordEncoder} to
-	 * use.
-	 * @return the {@link SecurityConfigurer} for further customizations
-	 */
-	@SuppressWarnings("unchecked")
-	public C passwordEncoder(
-			org.springframework.security.authentication.encoding.PasswordEncoder passwordEncoder) {
 		provider.setPasswordEncoder(passwordEncoder);
 		return (C) this;
 	}

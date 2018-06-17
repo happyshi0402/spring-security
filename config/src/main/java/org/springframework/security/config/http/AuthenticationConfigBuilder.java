@@ -50,13 +50,16 @@ import org.springframework.security.web.authentication.preauth.x509.X509Authenti
 import org.springframework.security.web.authentication.ui.DefaultLoginPageGeneratingFilter;
 import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 
+import javax.servlet.http.HttpServletRequest;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.function.Function;
 
 /**
  * Handles creation of authentication mechanism filters and related beans for &lt;http&gt;
@@ -70,7 +73,7 @@ final class AuthenticationConfigBuilder {
 	private final Log logger = LogFactory.getLog(getClass());
 
 	private static final String ATT_REALM = "realm";
-	private static final String DEF_REALM = "Spring Security Application";
+	private static final String DEF_REALM = "Realm";
 
 	static final String OPEN_ID_AUTHENTICATION_PROCESSING_FILTER_CLASS = "org.springframework.security.openid.OpenIDAuthenticationFilter";
 	static final String OPEN_ID_AUTHENTICATION_PROVIDER_CLASS = "org.springframework.security.openid.OpenIDAuthenticationProvider";
@@ -299,7 +302,7 @@ final class AuthenticationConfigBuilder {
 	}
 
 	private ManagedList<BeanDefinition> parseOpenIDAttributes(Element attrExElt) {
-		ManagedList<BeanDefinition> attributes = new ManagedList<BeanDefinition>();
+		ManagedList<BeanDefinition> attributes = new ManagedList<>();
 		for (Element attElt : DomUtils.getChildElementsByTagName(attrExElt,
 				Elements.OPENID_ATTRIBUTE)) {
 			String name = attElt.getAttribute("name");
@@ -539,6 +542,7 @@ final class AuthenticationConfigBuilder {
 					+ "' attribute to set the URL of the login page.");
 			BeanDefinitionBuilder loginPageFilter = BeanDefinitionBuilder
 					.rootBeanDefinition(DefaultLoginPageGeneratingFilter.class);
+			loginPageFilter.addPropertyValue("resolveHiddenInputs", new CsrfTokenHiddenInputFunction());
 
 			if (formFilterId != null) {
 				loginPageFilter.addConstructorArgReference(formFilterId);
@@ -760,7 +764,7 @@ final class AuthenticationConfigBuilder {
 	}
 
 	List<OrderDecorator> getFilters() {
-		List<OrderDecorator> filters = new ArrayList<OrderDecorator>();
+		List<OrderDecorator> filters = new ArrayList<>();
 
 		if (anonymousFilter != null) {
 			filters.add(new OrderDecorator(anonymousFilter, ANONYMOUS_FILTER));
@@ -806,7 +810,7 @@ final class AuthenticationConfigBuilder {
 	}
 
 	List<BeanReference> getProviders() {
-		List<BeanReference> providers = new ArrayList<BeanReference>();
+		List<BeanReference> providers = new ArrayList<>();
 
 		if (anonymousProviderRef != null) {
 			providers.add(anonymousProviderRef);
@@ -831,4 +835,16 @@ final class AuthenticationConfigBuilder {
 		return providers;
 	}
 
+	private static class CsrfTokenHiddenInputFunction implements
+		Function<HttpServletRequest, Map<String, String>> {
+
+		@Override
+		public Map<String, String> apply(HttpServletRequest request) {
+			CsrfToken token = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+			if(token == null) {
+				return Collections.emptyMap();
+			}
+			return Collections.singletonMap(token.getParameterName(), token.getToken());
+		}
+	}
 }

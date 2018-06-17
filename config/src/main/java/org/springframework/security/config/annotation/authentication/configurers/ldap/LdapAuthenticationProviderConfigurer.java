@@ -21,15 +21,14 @@ import java.net.ServerSocket;
 import org.springframework.ldap.core.support.BaseLdapPathContextSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.encoding.PasswordEncoder;
-import org.springframework.security.authentication.encoding.PlaintextPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.config.annotation.ObjectPostProcessor;
 import org.springframework.security.config.annotation.SecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.authentication.ProviderManagerBuilder;
 import org.springframework.security.config.annotation.web.configurers.ChannelSecurityConfigurer;
-import org.springframework.security.config.core.GrantedAuthorityDefaults;
 import org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper;
 import org.springframework.security.core.authority.mapping.SimpleAuthorityMapper;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.ldap.DefaultSpringSecurityContextSource;
 import org.springframework.security.ldap.authentication.AbstractLdapAuthenticator;
 import org.springframework.security.ldap.authentication.BindAuthenticator;
@@ -39,6 +38,7 @@ import org.springframework.security.ldap.authentication.PasswordComparisonAuthen
 import org.springframework.security.ldap.search.FilterBasedLdapUserSearch;
 import org.springframework.security.ldap.search.LdapUserSearch;
 import org.springframework.security.ldap.server.ApacheDSContainer;
+import org.springframework.security.ldap.server.UnboundIdContainer;
 import org.springframework.security.ldap.userdetails.DefaultLdapAuthoritiesPopulator;
 import org.springframework.security.ldap.userdetails.InetOrgPersonContextMapper;
 import org.springframework.security.ldap.userdetails.LdapAuthoritiesPopulator;
@@ -46,6 +46,7 @@ import org.springframework.security.ldap.userdetails.LdapUserDetailsMapper;
 import org.springframework.security.ldap.userdetails.PersonContextMapper;
 import org.springframework.security.ldap.userdetails.UserDetailsContextMapper;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 
 /**
  * Configures LDAP {@link AuthenticationProvider} in the {@link ProviderManagerBuilder}.
@@ -63,12 +64,12 @@ public class LdapAuthenticationProviderConfigurer<B extends ProviderManagerBuild
 	private String groupSearchFilter = "(uniqueMember={0})";
 	private String rolePrefix = "ROLE_";
 	private String userSearchBase = ""; // only for search
-	private String userSearchFilter = null;// "uid={0}"; // only for search
+	private String userSearchFilter = null; // "uid={0}"; // only for search
 	private String[] userDnPatterns;
 	private BaseLdapPathContextSource contextSource;
 	private ContextSourceBuilder contextSourceBuilder = new ContextSourceBuilder();
 	private UserDetailsContextMapper userDetailsContextMapper;
-	private Object passwordEncoder;
+	private PasswordEncoder passwordEncoder;
 	private String passwordAttribute;
 	private LdapAuthoritiesPopulator ldapAuthoritiesPopulator;
 	private GrantedAuthoritiesMapper authoritiesMapper;
@@ -249,22 +250,6 @@ public class LdapAuthenticationProviderConfigurer<B extends ProviderManagerBuild
 	}
 
 	/**
-	 * Specifies the {@link PasswordEncoder} to be used when authenticating with password
-	 * comparison.
-	 *
-	 * @param passwordEncoder the {@link PasswordEncoder} to use
-	 * @return the {@link LdapAuthenticationProviderConfigurer} for further customization
-	 * @deprecated Use
-	 * {@link #passwordEncoder(org.springframework.security.crypto.password.PasswordEncoder)}
-	 * instead
-	 */
-	public LdapAuthenticationProviderConfigurer<B> passwordEncoder(
-			PasswordEncoder passwordEncoder) {
-		this.passwordEncoder = passwordEncoder;
-		return this;
-	}
-
-	/**
 	 * Specifies the {@link org.springframework.security.crypto.password.PasswordEncoder}
 	 * to be used when authenticating with password comparison.
 	 *
@@ -401,7 +386,7 @@ public class LdapAuthenticationProviderConfigurer<B extends ProviderManagerBuild
 
 		/**
 		 * Allows specifying the {@link PasswordEncoder} to use. The default is
-		 * {@link PlaintextPasswordEncoder}.
+		 * {@link org.springframework.security.crypto.password.NoOpPasswordEncoder}.
 		 * @param passwordEncoder the {@link PasswordEncoder} to use
 		 * @return the {@link PasswordEncoder} to use
 		 */
@@ -551,9 +536,16 @@ public class LdapAuthenticationProviderConfigurer<B extends ProviderManagerBuild
 			if (url != null) {
 				return contextSource;
 			}
-			ApacheDSContainer apacheDsContainer = new ApacheDSContainer(root, ldif);
-			apacheDsContainer.setPort(getPort());
-			postProcess(apacheDsContainer);
+			if (ClassUtils.isPresent("org.apache.directory.server.core.DefaultDirectoryService", getClass().getClassLoader())) {
+				ApacheDSContainer apacheDsContainer = new ApacheDSContainer(root, ldif);
+				apacheDsContainer.setPort(getPort());
+				postProcess(apacheDsContainer);
+			}
+			else if (ClassUtils.isPresent("com.unboundid.ldap.listener.InMemoryDirectoryServer", getClass().getClassLoader())) {
+				UnboundIdContainer unboundIdContainer = new UnboundIdContainer(root, ldif);
+				unboundIdContainer.setPort(getPort());
+				postProcess(unboundIdContainer);
+			}
 			return contextSource;
 		}
 
@@ -614,6 +606,6 @@ public class LdapAuthenticationProviderConfigurer<B extends ProviderManagerBuild
 	 */
 	public PasswordCompareConfigurer passwordCompare() {
 		return new PasswordCompareConfigurer().passwordAttribute("password")
-				.passwordEncoder(new PlaintextPasswordEncoder());
+				.passwordEncoder(NoOpPasswordEncoder.getInstance());
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * Provides a model for an <i>OAuth 2.0</i> representation of a user <code>Principal</code>.
+ * Provides a model for an OAuth 2.0 representation of a user {@code Principal}.
  */
 package org.springframework.security.oauth2.core.user;

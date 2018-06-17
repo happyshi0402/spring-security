@@ -28,8 +28,6 @@ import javax.servlet.ServletResponse;
 
 import org.aopalliance.intercept.MethodInvocation;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.security.access.AccessDecisionVoter;
@@ -72,13 +70,7 @@ public class WebExpressionVoterTests {
 		EvaluationContextPostProcessor postProcessor = mock(
 				EvaluationContextPostProcessor.class);
 		when(postProcessor.postProcess(any(EvaluationContext.class),
-				any(FilterInvocation.class))).thenAnswer(new Answer<EvaluationContext>() {
-
-					public EvaluationContext answer(InvocationOnMock invocation)
-							throws Throwable {
-						return invocation.getArgumentAt(0, EvaluationContext.class);
-					}
-				});
+				any(FilterInvocation.class))).thenAnswer( invocation -> invocation.getArgument(0));
 		WebExpressionConfigAttribute weca = new WebExpressionConfigAttribute(ex,
 				postProcessor);
 		EvaluationContext ctx = mock(EvaluationContext.class);

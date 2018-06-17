@@ -237,13 +237,13 @@ public class AclImplTests {
 				true, new PrincipalSid("joe"));
 		Sid ben = new PrincipalSid("ben");
 		try {
-			acl.isGranted(new ArrayList<Permission>(0), Arrays.asList(ben), false);
+			acl.isGranted(new ArrayList<>(0), Arrays.asList(ben), false);
 			fail("It should have thrown IllegalArgumentException");
 		}
 		catch (IllegalArgumentException expected) {
 		}
 		try {
-			acl.isGranted(READ, new ArrayList<Sid>(0), false);
+			acl.isGranted(READ, new ArrayList<>(0), false);
 			fail("It should have thrown IllegalArgumentException");
 		}
 		catch (IllegalArgumentException expected) {
@@ -495,19 +495,19 @@ public class AclImplTests {
 		assertThat(acl.isSidLoaded(Arrays.asList(new GrantedAuthoritySid("ROLE_IGNORED"),
 				new PrincipalSid("ben"))))
 			.isTrue();
-		assertThat(acl.isSidLoaded(Arrays.asList((Sid)new GrantedAuthoritySid(
+		assertThat(acl.isSidLoaded(Arrays.asList((Sid) new GrantedAuthoritySid(
 				"ROLE_IGNORED"))))
 			.isTrue();
 		assertThat(acl.isSidLoaded(BEN)).isTrue();
 		assertThat(acl.isSidLoaded(null)).isTrue();
-		assertThat(acl.isSidLoaded(new ArrayList<Sid>(0))).isTrue();
+		assertThat(acl.isSidLoaded(new ArrayList<>(0))).isTrue();
 		assertThat(acl.isSidLoaded(Arrays.asList((Sid) new GrantedAuthoritySid(
 				"ROLE_IGNORED"), new GrantedAuthoritySid("ROLE_IGNORED"))))
 			.isTrue();
 		assertThat(acl.isSidLoaded(Arrays.asList((Sid) new GrantedAuthoritySid(
 				"ROLE_GENERAL"), new GrantedAuthoritySid("ROLE_IGNORED"))))
 			.isFalse();
-		assertThat(acl.isSidLoaded(Arrays.asList((Sid)new GrantedAuthoritySid(
+		assertThat(acl.isSidLoaded(Arrays.asList((Sid) new GrantedAuthoritySid(
 				"ROLE_IGNORED"), new GrantedAuthoritySid("ROLE_GENERAL"))))
 			.isFalse();
 	}

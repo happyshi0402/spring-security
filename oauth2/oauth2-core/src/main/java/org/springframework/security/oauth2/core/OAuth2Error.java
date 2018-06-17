@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,38 +15,47 @@
  */
 package org.springframework.security.oauth2.core;
 
+import org.springframework.security.core.SpringSecurityCoreVersion;
 import org.springframework.util.Assert;
 
+import java.io.Serializable;
+
 /**
- * A representation of an <i>OAuth 2.0 Error</i>.
+ * A representation of an OAuth 2.0 Error.
  *
  * <p>
  * At a minimum, an error response will contain an error code.
  * The error code may be one of the standard codes defined by the specification,
- * or a <i>new</i> code defined in the <i>OAuth Extensions Error Registry</i>,
+ * or a new code defined in the OAuth Extensions Error Registry,
  * for cases where protocol extensions require additional error code(s) above the standard codes.
  *
  * @author Joe Grandja
  * @since 5.0
+ * @see OAuth2ErrorCodes
  * @see <a target="_blank" href="https://tools.ietf.org/html/rfc6749#section-11.4">Section 11.4 OAuth Extensions Error Registry</a>
  */
-public class OAuth2Error {
-	// Standard error codes
-	public static final String INVALID_REQUEST_ERROR_CODE = "invalid_request";
-	public static final String INVALID_CLIENT_ERROR_CODE = "invalid_client";
-	public static final String INVALID_GRANT_ERROR_CODE = "invalid_grant";
-	public static final String UNAUTHORIZED_CLIENT_ERROR_CODE = "unauthorized_client";
-	public static final String UNSUPPORTED_GRANT_TYPE_ERROR_CODE = "unsupported_grant_type";
-	public static final String INVALID_SCOPE_ERROR_CODE = "invalid_scope";
-
+public class OAuth2Error implements Serializable {
+	private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
 	private final String errorCode;
 	private final String description;
 	private final String uri;
 
+	/**
+	 * Constructs an {@code OAuth2Error} using the provided parameters.
+	 *
+	 * @param errorCode the error code
+	 */
 	public OAuth2Error(String errorCode) {
 		this(errorCode, null, null);
 	}
 
+	/**
+	 * Constructs an {@code OAuth2Error} using the provided parameters.
+	 *
+	 * @param errorCode the error code
+	 * @param description the error description
+	 * @param uri the error uri
+	 */
 	public OAuth2Error(String errorCode, String description, String uri) {
 		Assert.hasText(errorCode, "errorCode cannot be empty");
 		this.errorCode = errorCode;
@@ -54,15 +63,30 @@ public class OAuth2Error {
 		this.uri = uri;
 	}
 
-	public String getErrorCode() {
+	/**
+	 * Returns the error code.
+	 *
+	 * @return the error code
+	 */
+	public final String getErrorCode() {
 		return this.errorCode;
 	}
 
-	public String getDescription() {
+	/**
+	 * Returns the error description.
+	 *
+	 * @return the error description
+	 */
+	public final String getDescription() {
 		return this.description;
 	}
 
-	public String getUri() {
+	/**
+	 * Returns the error uri.
+	 *
+	 * @return the error uri
+	 */
+	public final String getUri() {
 		return this.uri;
 	}
 

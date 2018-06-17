@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.RememberMeAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -58,7 +59,9 @@ public class CoreJackson2Module extends SimpleModule {
 		context.setMixInAnnotations(RememberMeAuthenticationToken.class, RememberMeAuthenticationTokenMixin.class);
 		context.setMixInAnnotations(SimpleGrantedAuthority.class, SimpleGrantedAuthorityMixin.class);
 		context.setMixInAnnotations(Collections.<Object>unmodifiableSet(Collections.emptySet()).getClass(), UnmodifiableSetMixin.class);
+		context.setMixInAnnotations(Collections.<Object>unmodifiableList(Collections.emptyList()).getClass(), UnmodifiableListMixin.class);
 		context.setMixInAnnotations(User.class, UserMixin.class);
 		context.setMixInAnnotations(UsernamePasswordAuthenticationToken.class, UsernamePasswordAuthenticationTokenMixin.class);
+		context.setMixInAnnotations(BadCredentialsException.class, BadCredentialsExceptionMixin.class);
 	}
 }

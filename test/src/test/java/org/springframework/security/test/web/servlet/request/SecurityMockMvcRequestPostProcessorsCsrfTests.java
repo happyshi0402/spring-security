@@ -29,7 +29,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
@@ -160,7 +159,7 @@ public class SecurityMockMvcRequestPostProcessorsCsrfTests {
 
 		MockHttpServletRequestBuilder requestWithCsrf = post("/")
 			.param(token.getParameterName(), token.getToken())
-			.session((MockHttpSession)request.getSession());
+			.session((MockHttpSession) request.getSession());
 		this.mockMvc.perform(requestWithCsrf)
 			.andExpect(status().isOk());
 		// @formatter:on

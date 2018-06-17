@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 package org.springframework.security.web.header.writers;
-
-import java.util.Arrays;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -61,12 +59,12 @@ public class CacheControlHeadersWriterTests {
 		this.writer.writeHeaders(this.request, this.response);
 
 		assertThat(this.response.getHeaderNames().size()).isEqualTo(3);
-		assertThat(this.response.getHeaderValues("Cache-Control")).isEqualTo(
-				Arrays.asList("no-cache, no-store, max-age=0, must-revalidate"));
+		assertThat(this.response.getHeaderValues("Cache-Control")).containsOnly(
+				"no-cache, no-store, max-age=0, must-revalidate");
 		assertThat(this.response.getHeaderValues("Pragma"))
-				.isEqualTo(Arrays.asList("no-cache"));
+				.containsOnly("no-cache");
 		assertThat(this.response.getHeaderValues("Expires"))
-				.isEqualTo(Arrays.asList("0"));
+				.containsOnly("0");
 	}
 
 	@Test
@@ -81,12 +79,12 @@ public class CacheControlHeadersWriterTests {
 		this.writer.writeHeaders(this.request, this.response);
 
 		assertThat(this.response.getHeaderNames().size()).isEqualTo(3);
-		assertThat(this.response.getHeaderValues("Cache-Control")).isEqualTo(
-				Arrays.asList("no-cache, no-store, max-age=0, must-revalidate"));
+		assertThat(this.response.getHeaderValues("Cache-Control"))
+				.containsOnly("no-cache, no-store, max-age=0, must-revalidate");
 		assertThat(this.response.getHeaderValues("Pragma"))
-				.isEqualTo(Arrays.asList("no-cache"));
+				.containsOnly("no-cache");
 		assertThat(this.response.getHeaderValues("Expires"))
-				.isEqualTo(Arrays.asList("0"));
+				.containsOnly("0");
 	}
 
 	// gh-2953

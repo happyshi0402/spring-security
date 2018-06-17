@@ -1,25 +1,25 @@
 /*
+ * Copyright 2002-2017 the original author or authors.
  *
- *  * Copyright 2002-2017 the original author or authors.
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  *      http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.springframework.security.test.context.support;
 
 import org.reactivestreams.Subscription;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.test.context.TestSecurityContextHolder;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.TestExecutionListener;
@@ -37,6 +37,8 @@ import reactor.util.context.Context;
  *
  * @author Rob Winch
  * @since 5.0
+ * @see WithSecurityContextTestExecutionListener
+ * @see org.springframework.security.test.context.annotation.SecurityTestExecutionListeners
  */
 public class ReactorContextTestExecutionListener
 	extends DelegatingTestExecutionListener {
@@ -56,7 +58,8 @@ public class ReactorContextTestExecutionListener
 	private static class DelegateTestExecutionListener extends AbstractTestExecutionListener {
 		@Override
 		public void beforeTestMethod(TestContext testContext) throws Exception {
-			Hooks.onLastOperator(Operators.lift((s, sub) -> new SecuritySubContext<>(sub)));
+			SecurityContext securityContext = TestSecurityContextHolder.getContext();
+			Hooks.onLastOperator(Operators.lift((s, sub) -> new SecuritySubContext<>(sub, securityContext)));
 		}
 
 		@Override
@@ -65,20 +68,30 @@ public class ReactorContextTestExecutionListener
 		}
 
 		private static class SecuritySubContext<T> implements CoreSubscriber<T> {
-			private final CoreSubscriber<T> delegate;
+			private static String CONTEXT_DEFAULTED_ATTR_NAME = SecuritySubContext.class.getName().concat(".CONTEXT_DEFAULTED_ATTR_NAME");
 
-			SecuritySubContext(CoreSubscriber<T> delegate) {
+			private final CoreSubscriber<T> delegate;
+			private final SecurityContext securityContext;
+
+			SecuritySubContext(CoreSubscriber<T> delegate, SecurityContext securityContext) {
 				this.delegate = delegate;
+				this.securityContext = securityContext;
 			}
 
 			@Override
 			public Context currentContext() {
 				Context context = delegate.currentContext();
-				Authentication authentication = TestSecurityContextHolder.getContext().getAuthentication();
+				if(context.hasKey(CONTEXT_DEFAULTED_ATTR_NAME)) {
+					return context;
+				}
+				context = context.put(CONTEXT_DEFAULTED_ATTR_NAME, Boolean.TRUE);
+				Authentication authentication = securityContext.getAuthentication();
 				if (authentication == null) {
 					return context;
 				}
-				return context.put(Authentication.class, Mono.just(authentication));
+				Context toMerge = ReactiveSecurityContextHolder.withSecurityContext(
+						Mono.just(this.securityContext));
+				return toMerge.putAll(context);
 			}
 
 			@Override

@@ -23,7 +23,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import org.springframework.expression.BeanResolver;
 import org.springframework.expression.ConstructorResolver;
@@ -60,7 +60,7 @@ public class DelegatingEvaluationContextTests {
 
 	@Test
 	public void getConstructorResolvers() {
-		List<ConstructorResolver> expected = new ArrayList<ConstructorResolver>();
+		List<ConstructorResolver> expected = new ArrayList<>();
 		when(this.delegate.getConstructorResolvers()).thenReturn(expected);
 
 		assertThat(this.context.getConstructorResolvers()).isEqualTo(expected);
@@ -68,7 +68,7 @@ public class DelegatingEvaluationContextTests {
 
 	@Test
 	public void getMethodResolvers() {
-		List<MethodResolver> expected = new ArrayList<MethodResolver>();
+		List<MethodResolver> expected = new ArrayList<>();
 		when(this.delegate.getMethodResolvers()).thenReturn(expected);
 
 		assertThat(this.context.getMethodResolvers()).isEqualTo(expected);
@@ -76,7 +76,7 @@ public class DelegatingEvaluationContextTests {
 
 	@Test
 	public void getPropertyAccessors() {
-		List<PropertyAccessor> expected = new ArrayList<PropertyAccessor>();
+		List<PropertyAccessor> expected = new ArrayList<>();
 		when(this.delegate.getPropertyAccessors()).thenReturn(expected);
 
 		assertThat(this.context.getPropertyAccessors()).isEqualTo(expected);

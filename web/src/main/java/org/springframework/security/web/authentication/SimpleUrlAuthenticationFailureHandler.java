@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import javax.servlet.http.HttpSession;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.WebAttributes;
 import org.springframework.security.web.DefaultRedirectStrategy;
@@ -74,8 +75,8 @@ public class SimpleUrlAuthenticationFailureHandler implements
 		if (defaultFailureUrl == null) {
 			logger.debug("No failure URL set, sending 401 Unauthorized error");
 
-			response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
-					"Authentication Failed: " + exception.getMessage());
+			response.sendError(HttpStatus.UNAUTHORIZED.value(),
+				HttpStatus.UNAUTHORIZED.getReasonPhrase());
 		}
 		else {
 			saveException(request, exception);
@@ -122,8 +123,8 @@ public class SimpleUrlAuthenticationFailureHandler implements
 	 * @param defaultFailureUrl the failure URL, for example "/loginFailed.jsp".
 	 */
 	public void setDefaultFailureUrl(String defaultFailureUrl) {
-		Assert.isTrue(UrlUtils.isValidRedirectUrl(defaultFailureUrl), "'"
-				+ defaultFailureUrl + "' is not a valid redirect URL");
+		Assert.isTrue(UrlUtils.isValidRedirectUrl(defaultFailureUrl),
+				() -> "'" + defaultFailureUrl + "' is not a valid redirect URL");
 		this.defaultFailureUrl = defaultFailureUrl;
 	}
 

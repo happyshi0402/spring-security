@@ -50,7 +50,7 @@ public class MethodExpressionVoterTests {
 
 	@Test
 	public void hasRoleExpressionDeniesUserWithoutRole() throws Exception {
-		List<ConfigAttribute> cad = new ArrayList<ConfigAttribute>(1);
+		List<ConfigAttribute> cad = new ArrayList<>(1);
 		cad.add(new PreInvocationExpressionAttribute(null, null, "hasRole('joedoesnt')"));
 		MethodInvocation mi = new SimpleMethodInvocation(new TargetImpl(),
 				methodTakingAnArray());
@@ -88,7 +88,7 @@ public class MethodExpressionVoterTests {
 		am.vote(joe, mi, createAttributes(new PreInvocationExpressionAttribute(
 				"(filterObject == 'joe' or filterObject == 'sam')", "collection",
 				"permitAll")));
-		assertThat(arg).containsExactly("joe","sam");
+		assertThat(arg).containsExactly("joe", "sam");
 	}
 
 	@Test(expected = IllegalArgumentException.class)

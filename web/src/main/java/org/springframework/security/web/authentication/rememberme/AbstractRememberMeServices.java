@@ -15,8 +15,12 @@
  */
 package org.springframework.security.web.authentication.rememberme;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.util.Base64;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -50,7 +54,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Luke Taylor
  * @author Rob Winch
- * @author Edd� Mel�ndez
+ * @author Eddú Meléndez
  * @since 2.0
  */
 public abstract class AbstractRememberMeServices implements RememberMeServices,
@@ -94,6 +98,7 @@ public abstract class AbstractRememberMeServices implements RememberMeServices,
 				boolean.class);
 	}
 
+	@Override
 	public void afterPropertiesSet() throws Exception {
 		Assert.hasLength(key, "key cannot be empty or null");
 		Assert.notNull(userDetailsService, "A UserDetailsService is required");
@@ -107,6 +112,7 @@ public abstract class AbstractRememberMeServices implements RememberMeServices,
 	 * The returned username is then used to load the UserDetails object for the user,
 	 * which in turn is used to create a valid authentication token.
 	 */
+	@Override
 	public final Authentication autoLogin(HttpServletRequest request,
 			HttpServletResponse response) {
 		String rememberMeCookie = extractRememberMeCookie(request);
@@ -229,13 +235,16 @@ public abstract class AbstractRememberMeServices implements RememberMeServices,
 		String[] tokens = StringUtils.delimitedListToStringArray(cookieAsPlainText,
 				DELIMITER);
 
-		if ((tokens[0].equalsIgnoreCase("http") || tokens[0].equalsIgnoreCase("https"))
-				&& tokens[1].startsWith("//")) {
-			// Assume we've accidentally split a URL (OpenID identifier)
-			String[] newTokens = new String[tokens.length - 1];
-			newTokens[0] = tokens[0] + ":" + tokens[1];
-			System.arraycopy(tokens, 2, newTokens, 1, newTokens.length - 1);
-			tokens = newTokens;
+		for (int i = 0; i < tokens.length; i++)
+		{
+			try
+			{
+				tokens[i] = URLDecoder.decode(tokens[i], StandardCharsets.UTF_8.toString());
+			}
+			catch (UnsupportedEncodingException e)
+			{
+				logger.error(e.getMessage(), e);
+			}
 		}
 
 		return tokens;
@@ -250,7 +259,14 @@ public abstract class AbstractRememberMeServices implements RememberMeServices,
 	protected String encodeCookie(String[] cookieTokens) {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < cookieTokens.length; i++) {
-			sb.append(cookieTokens[i]);
+			try
+			{
+				sb.append(URLEncoder.encode(cookieTokens[i], StandardCharsets.UTF_8.toString()));
+			}
+			catch (UnsupportedEncodingException e)
+			{
+				logger.error(e.getMessage(), e);
+			}
 
 			if (i < cookieTokens.length - 1) {
 				sb.append(DELIMITER);
@@ -268,6 +284,7 @@ public abstract class AbstractRememberMeServices implements RememberMeServices,
 		return sb.toString();
 	}
 
+	@Override
 	public final void loginFail(HttpServletRequest request, HttpServletResponse response) {
 		logger.debug("Interactive login attempt was unsuccessful.");
 		cancelCookie(request, response);
@@ -286,6 +303,7 @@ public abstract class AbstractRememberMeServices implements RememberMeServices,
 	 * true, calls <tt>onLoginSucces</tt>.
 	 * </p>
 	 */
+	@Override
 	public final void loginSuccess(HttpServletRequest request,
 			HttpServletResponse response, Authentication successfulAuthentication) {
 
@@ -425,6 +443,7 @@ public abstract class AbstractRememberMeServices implements RememberMeServices,
 	 * Implementation of {@code LogoutHandler}. Default behaviour is to call
 	 * {@code cancelCookie()}.
 	 */
+	@Override
 	public void logout(HttpServletRequest request, HttpServletResponse response,
 			Authentication authentication) {
 		if (logger.isDebugEnabled()) {

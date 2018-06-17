@@ -42,15 +42,17 @@ public class PreAuthenticatedGrantedAuthoritiesWebAuthenticationDetails extends
 			HttpServletRequest request, Collection<? extends GrantedAuthority> authorities) {
 		super(request);
 
-		List<GrantedAuthority> temp = new ArrayList<GrantedAuthority>(authorities.size());
+		List<GrantedAuthority> temp = new ArrayList<>(authorities.size());
 		temp.addAll(authorities);
 		this.authorities = Collections.unmodifiableList(temp);
 	}
 
+	@Override
 	public List<GrantedAuthority> getGrantedAuthorities() {
 		return authorities;
 	}
 
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString()).append("; ");

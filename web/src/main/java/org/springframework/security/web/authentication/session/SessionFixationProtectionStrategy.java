@@ -18,7 +18,6 @@ package org.springframework.security.web.authentication.session;
 
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -118,7 +117,7 @@ public class SessionFixationProtectionStrategy extends
 
 	@SuppressWarnings("unchecked")
 	private HashMap<String, Object> createMigratedAttributeMap(HttpSession session) {
-		HashMap<String, Object> attributesToMigrate = new HashMap<String, Object>();
+		HashMap<String, Object> attributesToMigrate = new HashMap<>();
 
 		Enumeration enumer = session.getAttributeNames();
 

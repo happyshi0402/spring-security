@@ -38,7 +38,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  *
@@ -70,15 +70,15 @@ public class HttpSecurityHeadersTests {
 	public void headerWhenSpringMvcResourceThenCacheRelatedHeadersReset() throws Exception {
 		mockMvc.perform(get("/resources/file.js"))
 			.andExpect(status().isOk())
-			.andExpect(header().string(HttpHeaders.CACHE_CONTROL,"max-age=12345"))
-			.andExpect(header().string(HttpHeaders.PRAGMA, ""))
-			.andExpect(header().string(HttpHeaders.EXPIRES, ""));
+			.andExpect(header().string(HttpHeaders.CACHE_CONTROL, "max-age=12345"))
+			.andExpect(header().doesNotExist(HttpHeaders.PRAGMA))
+			.andExpect(header().doesNotExist(HttpHeaders.EXPIRES));
 	}
 
 	@Test
 	public void headerWhenNotSpringResourceThenCacheRelatedHeadersSet() throws Exception {
 		mockMvc.perform(get("/notresource"))
-			.andExpect(header().string(HttpHeaders.CACHE_CONTROL,"no-cache, no-store, max-age=0, must-revalidate"))
+			.andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, max-age=0, must-revalidate"))
 			.andExpect(header().string(HttpHeaders.PRAGMA, "no-cache"))
 			.andExpect(header().string(HttpHeaders.EXPIRES, "0"));
 	}
@@ -92,7 +92,7 @@ public class HttpSecurityHeadersTests {
 
 	@EnableWebMvc
 	@Configuration
-	static class WebMvcConfig extends WebMvcConfigurerAdapter {
+	static class WebMvcConfig implements WebMvcConfigurer {
 		@Override
 		public void addResourceHandlers(ResourceHandlerRegistry registry) {
 			registry.addResourceHandler("/resources/**").addResourceLocations("classpath:/resources/").setCachePeriod(12345);

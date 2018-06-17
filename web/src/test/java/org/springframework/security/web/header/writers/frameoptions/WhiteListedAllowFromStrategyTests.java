@@ -17,13 +17,11 @@ package org.springframework.security.web.header.writers.frameoptions;
 
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.security.web.header.writers.frameoptions.WhiteListedAllowFromStrategy;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.CoreMatchers.is;
 
 /**
  * Test for the {@code WhiteListedAllowFromStrategy}.
@@ -35,7 +33,7 @@ public class WhiteListedAllowFromStrategyTests {
 
 	@Test(expected = IllegalArgumentException.class)
 	public void emptyListShouldThrowException() {
-		new WhiteListedAllowFromStrategy(new ArrayList<String>());
+		new WhiteListedAllowFromStrategy(new ArrayList<>());
 	}
 
 	@Test(expected = IllegalArgumentException.class)
@@ -45,7 +43,7 @@ public class WhiteListedAllowFromStrategyTests {
 
 	@Test
 	public void listWithSingleElementShouldMatch() {
-		List<String> allowed = new ArrayList<String>();
+		List<String> allowed = new ArrayList<>();
 		allowed.add("http://www.test.com");
 		WhiteListedAllowFromStrategy strategy = new WhiteListedAllowFromStrategy(allowed);
 		strategy.setAllowFromParameterName("from");
@@ -58,7 +56,7 @@ public class WhiteListedAllowFromStrategyTests {
 
 	@Test
 	public void listWithMultipleElementShouldMatch() {
-		List<String> allowed = new ArrayList<String>();
+		List<String> allowed = new ArrayList<>();
 		allowed.add("http://www.test.com");
 		allowed.add("http://www.springsource.org");
 		WhiteListedAllowFromStrategy strategy = new WhiteListedAllowFromStrategy(allowed);
@@ -72,7 +70,7 @@ public class WhiteListedAllowFromStrategyTests {
 
 	@Test
 	public void listWithSingleElementShouldNotMatch() {
-		List<String> allowed = new ArrayList<String>();
+		List<String> allowed = new ArrayList<>();
 		allowed.add("http://www.test.com");
 		WhiteListedAllowFromStrategy strategy = new WhiteListedAllowFromStrategy(allowed);
 		strategy.setAllowFromParameterName("from");
@@ -85,7 +83,7 @@ public class WhiteListedAllowFromStrategyTests {
 
 	@Test
 	public void requestWithoutParameterShouldNotMatch() {
-		List<String> allowed = new ArrayList<String>();
+		List<String> allowed = new ArrayList<>();
 		allowed.add("http://www.test.com");
 		WhiteListedAllowFromStrategy strategy = new WhiteListedAllowFromStrategy(allowed);
 		strategy.setAllowFromParameterName("from");

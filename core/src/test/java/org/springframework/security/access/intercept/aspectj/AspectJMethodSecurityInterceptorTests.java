@@ -39,13 +39,11 @@ import org.springframework.security.access.intercept.RunAsUserToken;
 import org.springframework.security.access.method.MethodSecurityMetadataSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.TestingAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.ClassUtils;
 
 import java.lang.reflect.Method;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -89,7 +87,7 @@ public class AspectJMethodSecurityInterceptorTests {
 		when(codeSig.getDeclaringType()).thenReturn(TargetObject.class);
 		when(codeSig.getParameterTypes()).thenReturn(new Class[] { String.class });
 		when(staticPart.getSignature()).thenReturn(codeSig);
-		when(mds.getAttributes(any(JoinPoint.class))).thenReturn(
+		when(mds.getAttributes(any())).thenReturn(
 				SecurityConfig.createList("ROLE_USER"));
 		when(authman.authenticate(token)).thenReturn(token);
 	}
@@ -113,7 +111,7 @@ public class AspectJMethodSecurityInterceptorTests {
 	@Test
 	public void callbackIsNotInvokedWhenPermissionDenied() throws Exception {
 		doThrow(new AccessDeniedException("denied")).when(adm).decide(
-				any(Authentication.class), any(), any(Collection.class));
+				any(), any(), any());
 
 		SecurityContextHolder.getContext().setAuthentication(token);
 		try {

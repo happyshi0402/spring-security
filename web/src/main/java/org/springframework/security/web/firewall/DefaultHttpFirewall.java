@@ -19,6 +19,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
+ * <p>
+ * User's should consider using {@link StrictHttpFirewall} because rather than trying to
+ * sanitize a malicious URL it rejects the malicious URL providing better security
+ * guarantees.
+ * <p>
  * Default implementation which wraps requests in order to provide consistent
  * values of the {@code servletPath} and {@code pathInfo}, which do not contain
  * path parameters (as defined in
@@ -38,6 +43,7 @@ import javax.servlet.http.HttpServletResponse;
  * again this is not guaranteed by the servlet spec.
  *
  * @author Luke Taylor
+ * @see StrictHttpFirewall
  */
 public class DefaultHttpFirewall implements HttpFirewall {
 	private boolean allowUrlEncodedSlash;

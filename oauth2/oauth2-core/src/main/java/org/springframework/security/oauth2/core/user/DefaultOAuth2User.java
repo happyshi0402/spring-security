@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,38 +19,54 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.SpringSecurityCoreVersion;
 import org.springframework.util.Assert;
 
-import java.util.*;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
  * The default implementation of an {@link OAuth2User}.
  *
  * <p>
- * User attribute names are <b><i>not</i></b> standardized between providers
- * and therefore it is required that the user supply the <i>key</i>
+ * User attribute names are <b>not</b> standardized between providers
+ * and therefore it is required to supply the <i>key</i>
  * for the user's &quot;name&quot; attribute to one of the constructors.
  * The <i>key</i> will be used for accessing the &quot;name&quot; of the
- * <code>Principal</code> (user) via {@link #getAttributes()}
+ * {@code Principal} (user) via {@link #getAttributes()}
  * and returning it from {@link #getName()}.
  *
  * @author Joe Grandja
  * @since 5.0
  * @see OAuth2User
  */
-public class DefaultOAuth2User implements OAuth2User {
+public class DefaultOAuth2User implements OAuth2User, Serializable {
 	private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
 	private final Set<GrantedAuthority> authorities;
-	private Map<String, Object> attributes;
+	private final Map<String, Object> attributes;
 	private final String nameAttributeKey;
 
-	public DefaultOAuth2User(Set<GrantedAuthority> authorities, Map<String, Object> attributes, String nameAttributeKey) {
+	/**
+	 * Constructs a {@code DefaultOAuth2User} using the provided parameters.
+	 *
+	 * @param authorities the authorities granted to the user
+	 * @param attributes the attributes about the user
+	 * @param nameAttributeKey the key used to access the user's &quot;name&quot; from {@link #getAttributes()}
+	 */
+	public DefaultOAuth2User(Collection<? extends GrantedAuthority> authorities, Map<String, Object> attributes, String nameAttributeKey) {
 		Assert.notEmpty(authorities, "authorities cannot be empty");
 		Assert.notEmpty(attributes, "attributes cannot be empty");
 		Assert.hasText(nameAttributeKey, "nameAttributeKey cannot be empty");
 		if (!attributes.containsKey(nameAttributeKey)) {
-			throw new IllegalArgumentException("Invalid nameAttributeKey: " + nameAttributeKey);
+			throw new IllegalArgumentException("Missing attribute '" + nameAttributeKey + "' in attributes");
 		}
-		this.authorities = Collections.unmodifiableSet(this.sortAuthorities(authorities));
+		this.authorities = Collections.unmodifiableSet(new LinkedHashSet<>(this.sortAuthorities(authorities)));
 		this.attributes = Collections.unmodifiableMap(new LinkedHashMap<>(attributes));
 		this.nameAttributeKey = nameAttributeKey;
 	}
@@ -70,10 +86,10 @@ public class DefaultOAuth2User implements OAuth2User {
 		return this.attributes;
 	}
 
-	private Set<GrantedAuthority> sortAuthorities(Set<GrantedAuthority> authorities) {
+	private Set<GrantedAuthority> sortAuthorities(Collection<? extends GrantedAuthority> authorities) {
 		SortedSet<GrantedAuthority> sortedAuthorities =
-			new TreeSet<>((g1, g2) -> g1.getAuthority().compareTo(g2.getAuthority()));
-		authorities.stream().forEach(sortedAuthorities::add);
+			new TreeSet<>(Comparator.comparing(GrantedAuthority::getAuthority));
+		sortedAuthorities.addAll(authorities);
 		return sortedAuthorities;
 	}
 

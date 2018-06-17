@@ -93,8 +93,9 @@ public final class DelegatingMethodSecurityMetadataSource extends
 		}
 	}
 
+	@Override
 	public Collection<ConfigAttribute> getAllConfigAttributes() {
-		Set<ConfigAttribute> set = new HashSet<ConfigAttribute>();
+		Set<ConfigAttribute> set = new HashSet<>();
 		for (MethodSecurityMetadataSource s : methodSecurityMetadataSources) {
 			Collection<ConfigAttribute> attrs = s.getAllConfigAttributes();
 			if (attrs != null) {
@@ -120,17 +121,20 @@ public final class DelegatingMethodSecurityMetadataSource extends
 			this.targetClass = targetClass;
 		}
 
+		@Override
 		public boolean equals(Object other) {
 			DefaultCacheKey otherKey = (DefaultCacheKey) other;
 			return (this.method.equals(otherKey.method) && ObjectUtils.nullSafeEquals(
 					this.targetClass, otherKey.targetClass));
 		}
 
+		@Override
 		public int hashCode() {
 			return this.method.hashCode() * 21
 					+ (this.targetClass != null ? this.targetClass.hashCode() : 0);
 		}
 
+		@Override
 		public String toString() {
 			return "CacheKey[" + (targetClass == null ? "-" : targetClass.getName())
 					+ "; " + method + "]";

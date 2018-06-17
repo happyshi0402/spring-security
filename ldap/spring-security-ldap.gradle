@@ -9,6 +9,7 @@ dependencies {
 
 	optional apachedsDependencies
 	optional 'ldapsdk:ldapsdk'
+	optional "com.unboundid:unboundid-ldapsdk"
 	optional 'org.apache.directory.shared:shared-ldap'
 
 	compile ('org.springframework.ldap:spring-ldap-core') {

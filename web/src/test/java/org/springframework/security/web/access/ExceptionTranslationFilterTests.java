@@ -15,9 +15,27 @@
  */
 package org.springframework.security.web.access;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyZeroInteractions;
+
+import java.io.IOException;
+import java.util.Locale;
+
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.MockPortResolver;
@@ -34,19 +52,6 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.WebAttributes;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.SavedRequest;
-
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.io.IOException;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 
 /**
  * Tests {@link ExceptionTranslationFilter}.
@@ -168,6 +173,36 @@ public class ExceptionTranslationFilterTests {
 	}
 
 	@Test
+	public void testLocalizedErrorMessages() throws Exception {
+		// Setup our HTTP request
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setServletPath("/secure/page.html");
+
+		// Setup the FilterChain to thrown an access denied exception
+		FilterChain fc = mock(FilterChain.class);
+		doThrow(new AccessDeniedException("")).when(fc).doFilter(
+			any(HttpServletRequest.class), any(HttpServletResponse.class));
+
+		// Setup SecurityContextHolder, as filter needs to check if user is
+		// anonymous
+		SecurityContextHolder.getContext().setAuthentication(
+			new AnonymousAuthenticationToken("ignored", "ignored", AuthorityUtils
+				.createAuthorityList("IGNORED")));
+
+		// Test
+		ExceptionTranslationFilter filter = new ExceptionTranslationFilter(
+			(req, res, ae) -> res.sendError(403, ae.getMessage()));
+		filter.setAuthenticationTrustResolver(new AuthenticationTrustResolverImpl());
+		assertThat(filter.getAuthenticationTrustResolver()).isNotNull();
+
+		LocaleContextHolder.setDefaultLocale(Locale.GERMAN);
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		filter.doFilter(request, response, fc);
+		assertThat(response.getErrorMessage())
+			.isEqualTo("Vollst\u00e4ndige Authentifikation wird ben\u00f6tigt um auf diese Resource zuzugreifen");
+	}
+
+	@Test
 	public void redirectedToLoginFormAndSessionShowsOriginalTargetWhenAuthenticationException()
 			throws Exception {
 		// Setup our HTTP request
@@ -270,7 +305,26 @@ public class ExceptionTranslationFilterTests {
 		}
 	}
 
-	private final AuthenticationEntryPoint mockEntryPoint = new AuthenticationEntryPoint() {
+	@Test
+	public void doFilterWhenResponseCommittedThenRethrowsException() throws Exception {
+		this.mockEntryPoint = mock(AuthenticationEntryPoint.class);
+		FilterChain chain = (request, response) -> {
+			HttpServletResponse httpResponse = (HttpServletResponse) response;
+			httpResponse.sendError(HttpServletResponse.SC_BAD_REQUEST);
+			throw new AccessDeniedException("Denied");
+		};
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		MockHttpServletResponse response = new MockHttpServletResponse();
+		ExceptionTranslationFilter filter = new ExceptionTranslationFilter(mockEntryPoint);
+
+		assertThatThrownBy(() -> filter.doFilter(request, response, chain))
+			.isInstanceOf(ServletException.class)
+			.hasCauseInstanceOf(AccessDeniedException.class);
+
+		verifyZeroInteractions(mockEntryPoint);
+	}
+
+	private AuthenticationEntryPoint mockEntryPoint = new AuthenticationEntryPoint() {
 		public void commence(HttpServletRequest request, HttpServletResponse response,
 				AuthenticationException authException) throws IOException,
 				ServletException {

@@ -20,9 +20,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
@@ -33,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -54,6 +60,20 @@ public class SecurityMockMvcResultMatchersTests {
 			.apply(springSecurity())
 			.build();
 		// @formatter:on
+	}
+
+	@Test
+	public void withAuthenticationWhenMatchesThenSuccess() throws Exception {
+		this.mockMvc.perform(formLogin())
+			.andExpect(authenticated().withAuthentication(auth ->
+				assertThat(auth).isInstanceOf(UsernamePasswordAuthenticationToken.class)));
+	}
+
+	@Test(expected = AssertionError.class)
+	public void withAuthenticationWhenNotMatchesThenFails() throws Exception {
+		this.mockMvc
+			.perform(formLogin())
+			.andExpect(authenticated().withAuthentication(auth -> assertThat(auth.getName()).isEqualTo("notmatch")));
 	}
 
 	// SEC-2719
@@ -81,11 +101,10 @@ public class SecurityMockMvcResultMatchersTests {
 	static class Config extends WebSecurityConfigurerAdapter {
 
 		// @formatter:off
-		@Autowired
-		public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-			auth
-				.inMemoryAuthentication()
-					.withUser("user").roles("USER","SELLER").password("password");
+		@Bean
+		public UserDetailsService userDetailsService() {
+			UserDetails user = User.withDefaultPasswordEncoder().username("user").password("password").roles("USER", "SELLER").build();
+			return new InMemoryUserDetailsManager(user);
 		}
 		// @formatter:on
 

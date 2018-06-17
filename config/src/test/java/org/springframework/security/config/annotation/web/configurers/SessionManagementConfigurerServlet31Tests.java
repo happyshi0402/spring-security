@@ -45,6 +45,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextImpl;
+import org.springframework.security.core.userdetails.PasswordEncodedUser;
 import org.springframework.security.web.context.HttpRequestResponseHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -71,7 +72,7 @@ public class SessionManagementConfigurerServlet31Tests {
 
 	@Before
 	public void setup() {
-		request = new MockHttpServletRequest();
+		request = new MockHttpServletRequest("GET", "");
 		response = new MockHttpServletResponse();
 		chain = new MockFilterChain();
 	}
@@ -87,7 +88,7 @@ public class SessionManagementConfigurerServlet31Tests {
 	public void changeSessionIdDefaultsInServlet31Plus() throws Exception {
 		spy(ReflectionUtils.class);
 		Method method = mock(Method.class);
-		MockHttpServletRequest request = new MockHttpServletRequest();
+		MockHttpServletRequest request = new MockHttpServletRequest("GET", "");
 		request.getSession();
 		request.setServletPath("/login");
 		request.setMethod("POST");
@@ -104,7 +105,7 @@ public class SessionManagementConfigurerServlet31Tests {
 
 		springSecurityFilterChain.doFilter(request, response, chain);
 
-		verifyStatic();
+		verifyStatic(ReflectionUtils.class);
 		ReflectionUtils.invokeMethod(same(method), any(HttpServletRequest.class));
 	}
 
@@ -126,7 +127,7 @@ public class SessionManagementConfigurerServlet31Tests {
 		protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 			auth
 				.inMemoryAuthentication()
-					.withUser("user").password("password").roles("USER");
+					.withUser(PasswordEncodedUser.user());
 		}
 		// @formatter:on
 	}

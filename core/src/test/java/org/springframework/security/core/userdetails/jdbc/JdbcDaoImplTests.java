@@ -16,8 +16,6 @@
 
 package org.springframework.security.core.userdetails.jdbc;
 
-import java.util.Locale;
-
 import org.junit.Test;
 
 import org.springframework.context.MessageSource;
@@ -212,6 +210,6 @@ public class JdbcDaoImplTests {
 
 		dao.getMessages().getMessage(code);
 
-		verify(source).getMessage(eq(code), any(Object[].class), any(Locale.class));
+		verify(source).getMessage(eq(code), any(), any());
 	}
 }

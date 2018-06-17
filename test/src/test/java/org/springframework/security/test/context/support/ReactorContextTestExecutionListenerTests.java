@@ -1,19 +1,17 @@
 /*
+ * Copyright 2002-2017 the original author or authors.
  *
- *  * Copyright 2002-2017 the original author or authors.
- *  *
- *  * Licensed under the Apache License, Version 2.0 (the "License");
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  *
- *  *      http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing, software
- *  * distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package org.springframework.security.test.context.support;
@@ -23,11 +21,15 @@ package org.springframework.security.test.context.support;
  * @since 5.0
  */
 
+import java.util.concurrent.ForkJoinPool;
+
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContext;
 import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -60,7 +62,11 @@ public class ReactorContextTestExecutionListenerTests {
 	public void beforeTestMethodWhenSecurityContextEmptyThenReactorContextNull() throws Exception {
 		this.listener.beforeTestMethod(this.testContext);
 
-		assertThat(Mono.subscriberContext().block().isEmpty()).isTrue();
+		Mono<?> result = ReactiveSecurityContextHolder
+			.getContext();
+
+		StepVerifier.create(result)
+			.verifyComplete();
 	}
 
 	@Test
@@ -69,9 +75,12 @@ public class ReactorContextTestExecutionListenerTests {
 
 		this.listener.beforeTestMethod(this.testContext);
 
-		assertThat(Mono.subscriberContext().block().isEmpty()).isTrue();
-	}
+		Mono<?> result = ReactiveSecurityContextHolder
+			.getContext();
 
+		StepVerifier.create(result)
+			.verifyComplete();
+	}
 
 	@Test
 	public void beforeTestMethodWhenAuthenticationThenReactorContextHasAuthentication() throws Exception {
@@ -83,6 +92,72 @@ public class ReactorContextTestExecutionListenerTests {
 		this.listener.beforeTestMethod(this.testContext);
 
 		assertAuthentication(expectedAuthentication);
+	}
+
+	@Test
+	public void beforeTestMethodWhenCustomContext() throws Exception {
+		TestingAuthenticationToken expectedAuthentication = new TestingAuthenticationToken("user", "password", "ROLE_USER");
+		SecurityContext context = new CustomContext(expectedAuthentication);
+		TestSecurityContextHolder.setContext(context);
+
+		this.listener.beforeTestMethod(this.testContext);
+
+		assertSecurityContext(context);
+	}
+
+	static class CustomContext implements SecurityContext {
+		private Authentication authentication;
+
+		CustomContext(Authentication authentication) {
+			this.authentication = authentication;
+		}
+
+		@Override
+		public Authentication getAuthentication() {
+			return this.authentication;
+		}
+
+		@Override
+		public void setAuthentication(Authentication authentication) {
+			this.authentication = authentication;
+		}
+	}
+
+	@Test
+	public void beforeTestMethodWhenExistingAuthenticationThenReactorContextHasOriginalAuthentication() throws Exception {
+		TestingAuthenticationToken expectedAuthentication = new TestingAuthenticationToken("user", "password", "ROLE_USER");
+		TestingAuthenticationToken contextHolder = new TestingAuthenticationToken("contextHolder", "password", "ROLE_USER");
+		TestSecurityContextHolder.setContext(new SecurityContextImpl(contextHolder));
+
+		this.listener.beforeTestMethod(this.testContext);
+
+		Mono<Authentication> authentication = Mono.just("any")
+			.flatMap(s -> ReactiveSecurityContextHolder.getContext()
+				.map(SecurityContext::getAuthentication)
+			)
+			.subscriberContext(ReactiveSecurityContextHolder.withAuthentication(expectedAuthentication));
+
+		StepVerifier.create(authentication)
+			.expectNext(expectedAuthentication)
+			.verifyComplete();
+	}
+
+	@Test
+	public void beforeTestMethodWhenClearThenReactorContextDoesNotOverride() throws Exception {
+		TestingAuthenticationToken expectedAuthentication = new TestingAuthenticationToken("user", "password", "ROLE_USER");
+		TestingAuthenticationToken contextHolder = new TestingAuthenticationToken("contextHolder", "password", "ROLE_USER");
+		TestSecurityContextHolder.setContext(new SecurityContextImpl(contextHolder));
+
+		this.listener.beforeTestMethod(this.testContext);
+
+		Mono<Authentication> authentication = Mono.just("any")
+			.flatMap(s -> ReactiveSecurityContextHolder.getContext()
+				.map(SecurityContext::getAuthentication)
+			)
+			.subscriberContext(ReactiveSecurityContextHolder.clearContext());
+
+		StepVerifier.create(authentication)
+			.verifyComplete();
 	}
 
 	@Test
@@ -109,11 +184,32 @@ public class ReactorContextTestExecutionListenerTests {
 		assertThat(comparator.compare(withSecurity, reactorContext)).isLessThan(0);
 	}
 
+	@Test
+	public void checkSecurityContextResolutionWhenSubscribedContextCalledOnTheDifferentThreadThanWithSecurityContextTestExecutionListener() throws Exception {
+		TestingAuthenticationToken contextHolder = new TestingAuthenticationToken("contextHolder", "password", "ROLE_USER");
+		TestSecurityContextHolder.setContext(new SecurityContextImpl(contextHolder));
+
+		this.listener.beforeTestMethod(this.testContext);
+
+		ForkJoinPool.commonPool()
+			.submit(() -> assertAuthentication(contextHolder))
+			.join();
+	}
+
 	public void assertAuthentication(Authentication expected) {
-		Mono<Authentication> authentication = Mono.subscriberContext()
-			.flatMap( context -> context.<Mono<Authentication>>get(Authentication.class));
+		Mono<Authentication> authentication = ReactiveSecurityContextHolder.getContext()
+			.map(SecurityContext::getAuthentication);
 
 		StepVerifier.create(authentication)
+			.expectNext(expected)
+			.verifyComplete();
+	}
+
+
+	private void assertSecurityContext(SecurityContext expected) {
+		Mono<SecurityContext> securityContext = ReactiveSecurityContextHolder.getContext();
+
+		StepVerifier.create(securityContext)
 			.expectNext(expected)
 			.verifyComplete();
 	}

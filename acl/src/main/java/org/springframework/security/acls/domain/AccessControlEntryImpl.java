@@ -64,6 +64,7 @@ public class AccessControlEntryImpl implements AccessControlEntry,
 	// ~ Methods
 	// ========================================================================================================
 
+	@Override
 	public boolean equals(Object arg0) {
 		if (!(arg0 instanceof AccessControlEntryImpl)) {
 			return false;
@@ -128,30 +129,49 @@ public class AccessControlEntryImpl implements AccessControlEntry,
 		return true;
 	}
 
+	@Override
+	public int hashCode() {
+		int result = this.acl.hashCode();
+		result = 31 * result + this.permission.hashCode();
+		result = 31 * result + (this.id != null ? this.id.hashCode() : 0);
+		result = 31 * result + this.sid.hashCode();
+		result = 31 * result + (this.auditFailure ? 1 : 0);
+		result = 31 * result + (this.auditSuccess ? 1 : 0);
+		result = 31 * result + (this.granting ? 1 : 0);
+		return result;
+	}
+
+	@Override
 	public Acl getAcl() {
 		return acl;
 	}
 
+	@Override
 	public Serializable getId() {
 		return id;
 	}
 
+	@Override
 	public Permission getPermission() {
 		return permission;
 	}
 
+	@Override
 	public Sid getSid() {
 		return sid;
 	}
 
+	@Override
 	public boolean isAuditFailure() {
 		return auditFailure;
 	}
 
+	@Override
 	public boolean isAuditSuccess() {
 		return auditSuccess;
 	}
 
+	@Override
 	public boolean isGranting() {
 		return granting;
 	}
@@ -169,6 +189,7 @@ public class AccessControlEntryImpl implements AccessControlEntry,
 		this.permission = permission;
 	}
 
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("AccessControlEntryImpl[");

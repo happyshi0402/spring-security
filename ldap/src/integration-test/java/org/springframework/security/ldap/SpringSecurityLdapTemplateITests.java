@@ -157,7 +157,7 @@ public class SpringSecurityLdapTemplateITests extends AbstractLdapIntegrationTes
 	protected void assertAttributeValue(Map<String, List<String>> record,
 			String attributeName, String... values) {
 		assertThat(record.containsKey(attributeName)).isTrue();
-		assertThat(record.get(attributeName).size()).isEqualTo(values.length);
+		assertThat(record.get(attributeName)).hasSize(values.length);
 		for (int i = 0; i < values.length; i++) {
 			assertThat(record.get(attributeName).get(i)).isEqualTo(values[i]);
 		}
@@ -185,7 +185,7 @@ public class SpringSecurityLdapTemplateITests extends AbstractLdapIntegrationTes
 
 	@Test
 	public void nonSpringLdapSearchCodeTestMethod() throws Exception {
-		java.util.Hashtable<String, String> env = new java.util.Hashtable<String, String>();
+		java.util.Hashtable<String, String> env = new java.util.Hashtable<>();
 		env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
 		env.put(Context.PROVIDER_URL, "ldap://localhost:"
 				+ ApacheDSServerIntegrationTests.getServerPort());

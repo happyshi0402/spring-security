@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -262,7 +262,7 @@ public class JdbcUserDetailsManagerTests {
 		manager.renameGroup("GROUP_0", "GROUP_X");
 
 		assertThat(template.queryForObject("select id from groups where group_name = 'GROUP_X'",
-				Integer.class)).isEqualTo(0);
+				Integer.class)).isZero();
 	}
 
 	@Test
@@ -359,7 +359,7 @@ public class JdbcUserDetailsManagerTests {
 	}
 
 	private class MockUserCache implements UserCache {
-		private Map<String, UserDetails> cache = new HashMap<String, UserDetails>();
+		private Map<String, UserDetails> cache = new HashMap<>();
 
 		public UserDetails getUserFromCache(String username) {
 			return (User) cache.get(username);

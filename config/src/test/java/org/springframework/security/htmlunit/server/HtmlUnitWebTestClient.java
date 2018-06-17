@@ -18,8 +18,6 @@ package org.springframework.security.htmlunit.server;
 
 import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +29,6 @@ import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebRequest;
 
 import com.gargoylesoftware.htmlunit.util.NameValuePair;
-import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
@@ -88,8 +85,8 @@ final class HtmlUnitWebTestClient {
 		return request.body(BodyInserters.fromObject(requestBody));
 	}
 
-	private MultiValueMap<String,String> formData(List<NameValuePair> params) {
-		MultiValueMap<String,String> result = new LinkedMultiValueMap<>(params.size());
+	private MultiValueMap<String, String> formData(List<NameValuePair> params) {
+		MultiValueMap<String, String> result = new LinkedMultiValueMap<>(params.size());
 		params.forEach( pair -> result.add(pair.getName(), pair.getValue()));
 		return result;
 	}
@@ -132,7 +129,7 @@ final class HtmlUnitWebTestClient {
 	}
 
 	private void headers(WebTestClient.RequestBodySpec request, WebRequest webRequest) {
-		webRequest.getAdditionalHeaders().forEach( (name,value) -> request.header(name, value));
+		webRequest.getAdditionalHeaders().forEach( (name, value) -> request.header(name, value));
 	}
 
 	private HttpMethod httpMethod(WebRequest webRequest) {
@@ -154,8 +151,14 @@ final class HtmlUnitWebTestClient {
 
 		private Mono<ClientResponse> redirectIfNecessary(ClientRequest request, ExchangeFunction next, ClientResponse response) {
 			URI location = response.headers().asHttpHeaders().getLocation();
+			String host = request.url().getHost();
+			String scheme = request.url().getScheme();
 			if(location != null) {
-				ClientRequest redirect = ClientRequest.method(HttpMethod.GET, URI.create("http://localhost" + location.toASCIIString()))
+				String redirectUrl = location.toASCIIString();
+				if (location.getHost() == null) {
+					redirectUrl = scheme+ "://" + host + location.toASCIIString();
+				}
+				ClientRequest redirect = ClientRequest.method(HttpMethod.GET, URI.create(redirectUrl))
 					.headers(headers -> headers.addAll(request.headers()))
 					.cookies(cookies -> cookies.addAll(request.cookies()))
 					.attributes(attributes -> attributes.putAll(request.attributes()))
@@ -194,8 +197,8 @@ final class HtmlUnitWebTestClient {
 				}).build();
 		}
 
-		private MultiValueMap<String,String> clientCookies() {
-			MultiValueMap<String,String> result = new LinkedMultiValueMap<>(this.cookies.size());
+		private MultiValueMap<String, String> clientCookies() {
+			MultiValueMap<String, String> result = new LinkedMultiValueMap<>(this.cookies.size());
 			this.cookies.values().forEach( cookie ->
 				result.add(cookie.getName(), cookie.getValue())
 			);

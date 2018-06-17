@@ -23,7 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.Authentication;
@@ -63,7 +63,7 @@ public class DelegatingLogoutSuccessHandlerTests {
 
 	@Before
 	public void setup() {
-		LinkedHashMap<RequestMatcher, LogoutSuccessHandler> matcherToHandler = new LinkedHashMap<RequestMatcher, LogoutSuccessHandler>();
+		LinkedHashMap<RequestMatcher, LogoutSuccessHandler> matcherToHandler = new LinkedHashMap<>();
 		matcherToHandler.put(this.matcher, this.handler);
 		matcherToHandler.put(this.matcher2, this.handler2);
 		this.delegatingHandler = new DelegatingLogoutSuccessHandler(matcherToHandler);

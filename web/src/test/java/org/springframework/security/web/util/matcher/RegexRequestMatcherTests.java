@@ -24,7 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 /**
@@ -106,6 +106,12 @@ public class RegexRequestMatcherTests {
 		request.setMethod("INVALID");
 
 		assertThat(matcher.matches(request)).isFalse();
+	}
+
+	@Test
+	public void toStringThenFormatted() {
+		RegexRequestMatcher matcher = new RegexRequestMatcher("/blah", "GET");
+		assertThat(matcher.toString()).isEqualTo("Regex [pattern='/blah', GET]");
 	}
 
 	private HttpServletRequest createRequestWithNullMethod(String path) {

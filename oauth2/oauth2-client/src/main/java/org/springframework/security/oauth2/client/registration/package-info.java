@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * Classes and interfaces related to {@link org.springframework.security.oauth2.client.registration.ClientRegistration}.
+ * Classes and interfaces that provide support for {@link org.springframework.security.oauth2.client.registration.ClientRegistration}.
  */
 package org.springframework.security.oauth2.client.registration;

@@ -20,8 +20,9 @@ import org.springframework.security.web.WebAttributes;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.AbstractRememberMeServices;
-import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.util.Assert;
 import org.springframework.web.filter.GenericFilterBean;
+import org.springframework.web.util.HtmlUtils;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -31,7 +32,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * For internal use with namespace configuration in the case where a user doesn't
@@ -60,6 +64,8 @@ public class DefaultLoginPageGeneratingFilter extends GenericFilterBean {
 	private String openIDusernameParameter;
 	private String openIDrememberMeParameter;
 	private Map<String, String> oauth2AuthenticationUrlToClientName;
+	private Function<HttpServletRequest, Map<String, String>> resolveHiddenInputs = request -> Collections
+		.emptyMap();
 
 
 	public DefaultLoginPageGeneratingFilter() {
@@ -105,6 +111,18 @@ public class DefaultLoginPageGeneratingFilter extends GenericFilterBean {
 						.getRememberMeServices()).getParameter();
 			}
 		}
+	}
+
+	/**
+	 * Sets a Function used to resolve a Map of the hidden inputs where the key is the
+	 * name of the input and the value is the value of the input. Typically this is used
+	 * to resolve the CSRF token.
+	 * @param resolveHiddenInputs the function to resolve the inputs
+	 */
+	public void setResolveHiddenInputs(
+		Function<HttpServletRequest, Map<String, String>> resolveHiddenInputs) {
+		Assert.notNull(resolveHiddenInputs, "resolveHiddenInputs cannot be null");
+		this.resolveHiddenInputs = resolveHiddenInputs;
 	}
 
 	public boolean isEnabled() {
@@ -179,7 +197,7 @@ public class DefaultLoginPageGeneratingFilter extends GenericFilterBean {
 			String loginPageHtml = generateLoginPageHtml(request, loginError,
 					logoutSuccess);
 			response.setContentType("text/html;charset=UTF-8");
-			response.setContentLength(loginPageHtml.length());
+			response.setContentLength(loginPageHtml.getBytes(StandardCharsets.UTF_8).length);
 			response.getWriter().write(loginPageHtml);
 
 			return;
@@ -269,7 +287,7 @@ public class DefaultLoginPageGeneratingFilter extends GenericFilterBean {
 			for (Map.Entry<String, String> clientAuthenticationUrlToClientName : oauth2AuthenticationUrlToClientName.entrySet()) {
 				sb.append(" <tr><td>");
 				sb.append("<a href=\"").append(request.getContextPath()).append(clientAuthenticationUrlToClientName.getKey()).append("\">");
-				sb.append(clientAuthenticationUrlToClientName.getValue());
+				sb.append(HtmlUtils.htmlEscape(clientAuthenticationUrlToClientName.getValue(), "UTF-8"));
 				sb.append("</a>");
 				sb.append("</td></tr>\n");
 			}
@@ -282,11 +300,8 @@ public class DefaultLoginPageGeneratingFilter extends GenericFilterBean {
 	}
 
 	private void renderHiddenInputs(StringBuilder sb, HttpServletRequest request) {
-		CsrfToken token = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
-
-		if (token != null) {
-			sb.append("	<input name=\"" + token.getParameterName()
-					+ "\" type=\"hidden\" value=\"" + token.getToken() + "\" />\n");
+		for(Map.Entry<String, String> input : this.resolveHiddenInputs.apply(request).entrySet()) {
+			sb.append("	<input name=\"").append(input.getKey()).append("\" type=\"hidden\" value=\"").append(input.getValue()).append("\" />\n");
 		}
 	}
 

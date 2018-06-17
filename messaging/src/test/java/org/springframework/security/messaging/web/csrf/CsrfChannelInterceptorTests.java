@@ -22,7 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
@@ -51,7 +51,7 @@ public class CsrfChannelInterceptorTests {
 
 		messageHeaders = SimpMessageHeaderAccessor.create(SimpMessageType.CONNECT);
 		messageHeaders.setNativeHeader(token.getHeaderName(), token.getToken());
-		messageHeaders.setSessionAttributes(new HashMap<String, Object>());
+		messageHeaders.setSessionAttributes(new HashMap<>());
 		messageHeaders.getSessionAttributes().put(CsrfToken.class.getName(), token);
 	}
 

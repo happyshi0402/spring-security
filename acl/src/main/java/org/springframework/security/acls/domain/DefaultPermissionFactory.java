@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,8 @@ import org.springframework.util.Assert;
  * @since 2.0.3
  */
 public class DefaultPermissionFactory implements PermissionFactory {
-	private final Map<Integer, Permission> registeredPermissionsByInteger = new HashMap<Integer, Permission>();
-	private final Map<String, Permission> registeredPermissionsByName = new HashMap<String, Permission>();
+	private final Map<Integer, Permission> registeredPermissionsByInteger = new HashMap<>();
+	private final Map<String, Permission> registeredPermissionsByName = new HashMap<>();
 
 	/**
 	 * Registers the <tt>Permission</tt> fields from the <tt>BasePermission</tt> class.
@@ -104,9 +104,9 @@ public class DefaultPermissionFactory implements PermissionFactory {
 
 		// Ensure no existing Permission uses this integer or code
 		Assert.isTrue(!registeredPermissionsByInteger.containsKey(mask),
-				"An existing Permission already provides mask " + mask);
+				() -> "An existing Permission already provides mask " + mask);
 		Assert.isTrue(!registeredPermissionsByName.containsKey(permissionName),
-				"An existing Permission already provides name '" + permissionName + "'");
+				() -> "An existing Permission already provides name '" + permissionName + "'");
 
 		// Register the new Permission
 		registeredPermissionsByInteger.put(mask, perm);
@@ -156,7 +156,7 @@ public class DefaultPermissionFactory implements PermissionFactory {
 			return Collections.emptyList();
 		}
 
-		List<Permission> permissions = new ArrayList<Permission>(names.size());
+		List<Permission> permissions = new ArrayList<>(names.size());
 
 		for (String name : names) {
 			permissions.add(buildFromName(name));

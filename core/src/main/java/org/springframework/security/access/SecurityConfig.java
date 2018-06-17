@@ -44,6 +44,7 @@ public class SecurityConfig implements ConfigAttribute {
 	// ~ Methods
 	// ========================================================================================================
 
+	@Override
 	public boolean equals(Object obj) {
 		if (obj instanceof ConfigAttribute) {
 			ConfigAttribute attr = (ConfigAttribute) obj;
@@ -54,14 +55,17 @@ public class SecurityConfig implements ConfigAttribute {
 		return false;
 	}
 
+	@Override
 	public String getAttribute() {
 		return this.attrib;
 	}
 
+	@Override
 	public int hashCode() {
 		return this.attrib.hashCode();
 	}
 
+	@Override
 	public String toString() {
 		return this.attrib;
 	}
@@ -72,7 +76,7 @@ public class SecurityConfig implements ConfigAttribute {
 
 	public static List<ConfigAttribute> createList(String... attributeNames) {
 		Assert.notNull(attributeNames, "You must supply an array of attribute names");
-		List<ConfigAttribute> attributes = new ArrayList<ConfigAttribute>(
+		List<ConfigAttribute> attributes = new ArrayList<>(
 				attributeNames.length);
 
 		for (String attribute : attributeNames) {

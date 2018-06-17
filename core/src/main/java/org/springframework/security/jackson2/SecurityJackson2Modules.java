@@ -18,16 +18,28 @@ package org.springframework.security.jackson2;
 
 import com.fasterxml.jackson.annotation.JacksonAnnotation;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.DatabindContext;
+import com.fasterxml.jackson.databind.DeserializationConfig;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.cfg.MapperConfig;
-import com.fasterxml.jackson.databind.jsontype.*;
+import com.fasterxml.jackson.databind.jsontype.NamedType;
+import com.fasterxml.jackson.databind.jsontype.TypeIdResolver;
+import com.fasterxml.jackson.databind.jsontype.TypeResolverBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.util.ClassUtils;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * This utility class will find all the SecurityModules in classpath.
@@ -95,7 +107,7 @@ public final class SecurityJackson2Modules {
 	 * @return List of available security modules in classpath.
 	 */
 	public static List<Module> getModules(ClassLoader loader) {
-		List<Module> modules = new ArrayList<Module>();
+		List<Module> modules = new ArrayList<>();
 		for (String className : securityJackson2ModuleClasses) {
 			Module module = loadAndGetInstance(className, loader);
 			if (module != null) {
@@ -142,9 +154,13 @@ public final class SecurityJackson2Modules {
 	static class WhitelistTypeIdResolver implements TypeIdResolver {
 		private static final Set<String> WHITELIST_CLASS_NAMES = Collections.unmodifiableSet(new HashSet(Arrays.asList(
 			"java.util.ArrayList",
+			"java.util.Collections$EmptyList",
 			"java.util.Collections$EmptyMap",
+			"java.util.Collections$UnmodifiableRandomAccessList",
+			"java.util.Collections$SingletonList",
 			"java.util.Date",
 			"java.util.TreeMap",
+			"java.util.HashMap",
 			"org.springframework.security.core.context.SecurityContextImpl"
 		)));
 

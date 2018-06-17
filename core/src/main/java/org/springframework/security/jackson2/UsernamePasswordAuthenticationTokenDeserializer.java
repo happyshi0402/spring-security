@@ -16,6 +16,9 @@
 
 package org.springframework.security.jackson2;
 
+import java.io.IOException;
+import java.util.List;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -24,12 +27,9 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.MissingNode;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-
-import java.io.IOException;
-import java.util.List;
 
 /**
  * Custom deserializer for {@link UsernamePasswordAuthenticationToken}. At the time of deserialization
@@ -40,6 +40,7 @@ import java.util.List;
  * you can also registered it with your own mixin class.
  *
  * @author Jitendra Singh
+ * @author Greg Turnquist
  * @see UsernamePasswordAuthenticationTokenMixin
  * @since 4.2
  */
@@ -62,20 +63,31 @@ class UsernamePasswordAuthenticationTokenDeserializer extends JsonDeserializer<U
 		JsonNode principalNode = readJsonNode(jsonNode, "principal");
 		Object principal = null;
 		if(principalNode.isObject()) {
-			principal = mapper.readValue(principalNode.toString(), new TypeReference<User>() {});
+			principal = mapper.readValue(principalNode.traverse(mapper), Object.class);
 		} else {
 			principal = principalNode.asText();
 		}
-		Object credentials = readJsonNode(jsonNode, "credentials").asText();
+		JsonNode credentialsNode = readJsonNode(jsonNode, "credentials");
+		Object credentials;
+		if (credentialsNode.isNull()) {
+			credentials = null;
+		} else {
+			credentials = credentialsNode.asText();
+		}
 		List<GrantedAuthority> authorities = mapper.readValue(
-				readJsonNode(jsonNode, "authorities").toString(), new TypeReference<List<GrantedAuthority>>() {
+				readJsonNode(jsonNode, "authorities").traverse(mapper), new TypeReference<List<GrantedAuthority>>() {
 		});
 		if (authenticated) {
 			token = new UsernamePasswordAuthenticationToken(principal, credentials, authorities);
 		} else {
 			token = new UsernamePasswordAuthenticationToken(principal, credentials);
 		}
-		token.setDetails(readJsonNode(jsonNode, "details"));
+		JsonNode detailsNode = readJsonNode(jsonNode, "details");
+		if (detailsNode.isNull()) {
+			token.setDetails(null);
+		} else {
+			token.setDetails(detailsNode);
+		}
 		return token;
 	}
 

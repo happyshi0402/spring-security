@@ -29,7 +29,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.security.acls.domain.ObjectIdentityImpl;
 import org.springframework.security.acls.domain.PrincipalSid;
 import org.springframework.security.acls.model.Acl;
@@ -55,7 +55,7 @@ public class JdbcAclServiceTests {
 	// SEC-1898
 	@Test(expected = NotFoundException.class)
 	public void readAclByIdMissingAcl() {
-		Map<ObjectIdentity, Acl> result = new HashMap<ObjectIdentity, Acl>();
+		Map<ObjectIdentity, Acl> result = new HashMap<>();
 		when(
 				lookupStrategy.readAclsById(anyListOf(ObjectIdentity.class),
 						anyListOf(Sid.class))).thenReturn(result);

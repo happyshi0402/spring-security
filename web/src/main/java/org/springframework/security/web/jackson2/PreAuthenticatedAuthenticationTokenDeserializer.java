@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.List;
 
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationToken;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -63,13 +62,13 @@ class PreAuthenticatedAuthenticationTokenDeserializer extends JsonDeserializer<P
 		JsonNode principalNode = readJsonNode(jsonNode, "principal");
 		Object principal = null;
 		if(principalNode.isObject()) {
-			principal = mapper.readValue(principalNode.toString(), new TypeReference<User>() {});
+			principal = mapper.readValue(principalNode.traverse(mapper), Object.class);
 		} else {
 			principal = principalNode.asText();
 		}
 		Object credentials = readJsonNode(jsonNode, "credentials").asText();
 		List<GrantedAuthority> authorities = mapper.readValue(
-				readJsonNode(jsonNode, "authorities").toString(), new TypeReference<List<GrantedAuthority>>() {
+				readJsonNode(jsonNode, "authorities").traverse(mapper), new TypeReference<List<GrantedAuthority>>() {
 		});
 		if (authenticated) {
 			token = new PreAuthenticatedAuthenticationToken(principal, credentials, authorities);

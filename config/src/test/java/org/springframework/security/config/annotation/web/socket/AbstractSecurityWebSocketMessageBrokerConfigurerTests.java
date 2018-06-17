@@ -493,7 +493,7 @@ public class AbstractSecurityWebSocketMessageBrokerConfigurerTests {
 	}
 
 	private MockHttpServletRequest sockjsHttpRequest(String mapping) {
-		MockHttpServletRequest request = new MockHttpServletRequest();
+		MockHttpServletRequest request = new MockHttpServletRequest("GET", "");
 		request.setMethod("GET");
 		request.setAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE,
 				"/289/tpyx6mde/websocket");
@@ -511,14 +511,14 @@ public class AbstractSecurityWebSocketMessageBrokerConfigurerTests {
 
 	private Message<String> message(SimpMessageHeaderAccessor headers, String destination) {
 		headers.setSessionId("123");
-		headers.setSessionAttributes(new HashMap<String, Object>());
+		headers.setSessionAttributes(new HashMap<>());
 		if (destination != null) {
 			headers.setDestination(destination);
 		}
 		if (messageUser != null) {
 			headers.setUser(messageUser);
 		}
-		return new GenericMessage<String>("hi", headers.getMessageHeaders());
+		return new GenericMessage<>("hi", headers.getMessageHeaders());
 	}
 
 	private MessageChannel clientInboundChannel() {

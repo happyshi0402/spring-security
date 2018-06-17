@@ -15,6 +15,7 @@
  */
 package org.springframework.security.config.annotation.web;
 
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.ObjectPostProcessor;
@@ -42,6 +43,8 @@ import java.util.List;
  * @since 3.2
  */
 public abstract class AbstractRequestMatcherRegistry<C> {
+	private static final String HANDLER_MAPPING_INTROSPECTOR_BEAN_NAME = "mvcHandlerMappingIntrospector";
+
 	private static final RequestMatcher ANY_REQUEST = AnyRequestMatcher.INSTANCE;
 
 	private ApplicationContext context;
@@ -160,9 +163,13 @@ public abstract class AbstractRequestMatcherRegistry<C> {
 			String... mvcPatterns) {
 		boolean isServlet30 = ClassUtils.isPresent("javax.servlet.ServletRegistration", getClass().getClassLoader());
 		ObjectPostProcessor<Object> opp = this.context.getBean(ObjectPostProcessor.class);
-		HandlerMappingIntrospector introspector = new HandlerMappingIntrospector(
-				this.context);
-		List<MvcRequestMatcher> matchers = new ArrayList<MvcRequestMatcher>(
+		if(!this.context.containsBean(HANDLER_MAPPING_INTROSPECTOR_BEAN_NAME)) {
+			throw new NoSuchBeanDefinitionException("A Bean named " + HANDLER_MAPPING_INTROSPECTOR_BEAN_NAME +" of type " + HandlerMappingIntrospector.class.getName()
+				+ " is required to use MvcRequestMatcher. Please ensure Spring Security & Spring MVC are configured in a shared ApplicationContext.");
+		}
+		HandlerMappingIntrospector introspector = this.context.getBean(HANDLER_MAPPING_INTROSPECTOR_BEAN_NAME,
+			HandlerMappingIntrospector.class);
+		List<MvcRequestMatcher> matchers = new ArrayList<>(
 				mvcPatterns.length);
 		for (String mvcPattern : mvcPatterns) {
 			MvcRequestMatcher matcher = new MvcRequestMatcher(introspector, mvcPattern);
@@ -250,7 +257,7 @@ public abstract class AbstractRequestMatcherRegistry<C> {
 		public static List<RequestMatcher> antMatchers(HttpMethod httpMethod,
 				String... antPatterns) {
 			String method = httpMethod == null ? null : httpMethod.toString();
-			List<RequestMatcher> matchers = new ArrayList<RequestMatcher>();
+			List<RequestMatcher> matchers = new ArrayList<>();
 			for (String pattern : antPatterns) {
 				matchers.add(new AntPathRequestMatcher(pattern, method));
 			}
@@ -283,7 +290,7 @@ public abstract class AbstractRequestMatcherRegistry<C> {
 		public static List<RequestMatcher> regexMatchers(HttpMethod httpMethod,
 				String... regexPatterns) {
 			String method = httpMethod == null ? null : httpMethod.toString();
-			List<RequestMatcher> matchers = new ArrayList<RequestMatcher>();
+			List<RequestMatcher> matchers = new ArrayList<>();
 			for (String pattern : regexPatterns) {
 				matchers.add(new RegexRequestMatcher(pattern, method));
 			}

@@ -140,9 +140,9 @@ public class ActiveDirectoryLdapAuthenticationProviderTests {
 				any(Object[].class), any(SearchControls.class));
 	}
 
-	// SEC-2897
+	// SEC-2897,SEC-2224
 	@Test
-	public void bindPrincipalUsed() throws Exception {
+	public void bindPrincipalAndUsernameUsed() throws Exception {
 		// given
 		final String defaultSearchFilter = "(&(objectClass=user)(userPrincipalName={0}))";
 		ArgumentCaptor<Object[]> captor = ArgumentCaptor.forClass(Object[].class);
@@ -166,7 +166,7 @@ public class ActiveDirectoryLdapAuthenticationProviderTests {
 		Authentication result = customProvider.authenticate(joe);
 
 		// then
-		assertThat(captor.getValue()).containsOnly("joe@mydomain.eu");
+		assertThat(captor.getValue()).containsExactly("joe@mydomain.eu", "joe");
 		assertThat(result.isAuthenticated()).isTrue();
 	}
 
@@ -230,7 +230,7 @@ public class ActiveDirectoryLdapAuthenticationProviderTests {
 		when(
 				ctx.search(any(Name.class), any(String.class), any(Object[].class),
 						any(SearchControls.class))).thenReturn(
-				new EmptyEnumeration<SearchResult>());
+				new EmptyEnumeration<>());
 
 		provider.contextFactory = createContextFactoryReturning(ctx);
 

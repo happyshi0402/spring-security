@@ -56,7 +56,7 @@ import org.springframework.util.ReflectionUtils;
 public class SessionManagementConfigServlet31Tests {
 	private static final String XML_AUTHENTICATION_MANAGER = "<authentication-manager>"
 			+ "  <authentication-provider>" + "    <user-service>"
-			+ "      <user name='user' password='password' authorities='ROLE_USER' />"
+			+ "      <user name='user' password='{noop}password' authorities='ROLE_USER' />"
 			+ "    </user-service>" + "  </authentication-provider>"
 			+ "</authentication-manager>";
 
@@ -73,7 +73,7 @@ public class SessionManagementConfigServlet31Tests {
 
 	@Before
 	public void setup() {
-		request = new MockHttpServletRequest();
+		request = new MockHttpServletRequest("GET", "");
 		response = new MockHttpServletResponse();
 		chain = new MockFilterChain();
 	}
@@ -89,7 +89,7 @@ public class SessionManagementConfigServlet31Tests {
 	public void changeSessionIdDefaultsInServlet31Plus() throws Exception {
 		spy(ReflectionUtils.class);
 		Method method = mock(Method.class);
-		MockHttpServletRequest request = new MockHttpServletRequest();
+		MockHttpServletRequest request = new MockHttpServletRequest("GET", "");
 		request.getSession();
 		request.setServletPath("/login");
 		request.setMethod("POST");
@@ -104,7 +104,7 @@ public class SessionManagementConfigServlet31Tests {
 
 		springSecurityFilterChain.doFilter(request, response, chain);
 
-		verifyStatic();
+		verifyStatic(ReflectionUtils.class);
 		ReflectionUtils.invokeMethod(same(method), any(HttpServletRequest.class));
 	}
 
@@ -112,7 +112,7 @@ public class SessionManagementConfigServlet31Tests {
 	public void changeSessionId() throws Exception {
 		spy(ReflectionUtils.class);
 		Method method = mock(Method.class);
-		MockHttpServletRequest request = new MockHttpServletRequest();
+		MockHttpServletRequest request = new MockHttpServletRequest("GET", "");
 		request.getSession();
 		request.setServletPath("/login");
 		request.setMethod("POST");
@@ -129,7 +129,7 @@ public class SessionManagementConfigServlet31Tests {
 
 		springSecurityFilterChain.doFilter(request, response, chain);
 
-		verifyStatic();
+		verifyStatic(ReflectionUtils.class);
 		ReflectionUtils.invokeMethod(same(method), any(HttpServletRequest.class));
 	}
 

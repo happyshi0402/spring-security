@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -213,7 +213,7 @@ public class GlobalMethodSecurityConfiguration
 					getExpressionHandler());
 			PostInvocationAdviceProvider postInvocationAdviceProvider = new PostInvocationAdviceProvider(
 					postAdvice);
-			List<AfterInvocationProvider> afterInvocationProviders = new ArrayList<AfterInvocationProvider>();
+			List<AfterInvocationProvider> afterInvocationProviders = new ArrayList<>();
 			afterInvocationProviders.add(postInvocationAdviceProvider);
 			invocationProviderManager.setProviders(afterInvocationProviders);
 			return invocationProviderManager;
@@ -350,7 +350,7 @@ public class GlobalMethodSecurityConfiguration
 	 */
 	@Bean
 	public MethodSecurityMetadataSource methodSecurityMetadataSource() {
-		List<MethodSecurityMetadataSource> sources = new ArrayList<MethodSecurityMetadataSource>();
+		List<MethodSecurityMetadataSource> sources = new ArrayList<>();
 		ExpressionBasedAnnotationAttributeFactory attributeFactory = new ExpressionBasedAnnotationAttributeFactory(
 				getExpressionHandler());
 		MethodSecurityMetadataSource customMethodSecurityMetadataSource = customMethodSecurityMetadataSource();
@@ -457,7 +457,7 @@ public class GlobalMethodSecurityConfiguration
 			EnableGlobalMethodSecurity methodSecurityAnnotation = AnnotationUtils
 					.findAnnotation(getClass(), EnableGlobalMethodSecurity.class);
 			Assert.notNull(methodSecurityAnnotation,
-					EnableGlobalMethodSecurity.class.getName() + " is required");
+					() -> EnableGlobalMethodSecurity.class.getName() + " is required");
 			Map<String, Object> methodSecurityAttrs = AnnotationUtils
 					.getAnnotationAttributes(methodSecurityAnnotation);
 			this.enableMethodSecurity = AnnotationAttributes.fromMap(methodSecurityAttrs);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,33 +15,57 @@
  */
 package org.springframework.security.oauth2.client.web;
 
-import org.springframework.security.oauth2.core.endpoint.AuthorizationRequestAttributes;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
  * Implementations of this interface are responsible for the persistence
- * of {@link AuthorizationRequestAttributes} between requests.
+ * of {@link OAuth2AuthorizationRequest} between requests.
  *
  * <p>
- * Used by the {@link AuthorizationCodeRequestRedirectFilter} for persisting the <i>Authorization Request</i>
+ * Used by the {@link OAuth2AuthorizationRequestRedirectFilter} for persisting the Authorization Request
  * before it initiates the authorization code grant flow.
- * As well, used by the {@link AuthorizationCodeAuthenticationProcessingFilter} when resolving
- * the associated <i>Authorization Request</i> during the handling of the <i>Authorization Response</i>.
+ * As well, used by the {@link OAuth2LoginAuthenticationFilter} for resolving
+ * the associated Authorization Request when handling the callback of the Authorization Response.
  *
  * @author Joe Grandja
  * @since 5.0
- * @see AuthorizationRequestAttributes
- * @see HttpSessionAuthorizationRequestRepository
+ * @see OAuth2AuthorizationRequest
+ * @see HttpSessionOAuth2AuthorizationRequestRepository
+ *
+ * @param <T> The type of OAuth 2.0 Authorization Request
  */
-public interface AuthorizationRequestRepository {
+public interface AuthorizationRequestRepository<T extends OAuth2AuthorizationRequest> {
 
-	AuthorizationRequestAttributes loadAuthorizationRequest(HttpServletRequest request);
+	/**
+	 * Returns the {@link OAuth2AuthorizationRequest} associated to the provided {@code HttpServletRequest}
+	 * or {@code null} if not available.
+	 *
+	 * @param request the {@code HttpServletRequest}
+	 * @return the {@link OAuth2AuthorizationRequest} or {@code null} if not available
+	 */
+	T loadAuthorizationRequest(HttpServletRequest request);
 
-	void saveAuthorizationRequest(AuthorizationRequestAttributes authorizationRequest, HttpServletRequest request,
-								  HttpServletResponse response);
+	/**
+	 * Persists the {@link OAuth2AuthorizationRequest} associating it to
+	 * the provided {@code HttpServletRequest} and/or {@code HttpServletResponse}.
+	 *
+	 * @param authorizationRequest the {@link OAuth2AuthorizationRequest}
+	 * @param request the {@code HttpServletRequest}
+	 * @param response the {@code HttpServletResponse}
+	 */
+	void saveAuthorizationRequest(T authorizationRequest, HttpServletRequest request,
+									HttpServletResponse response);
 
-	AuthorizationRequestAttributes removeAuthorizationRequest(HttpServletRequest request);
+	/**
+	 * Removes and returns the {@link OAuth2AuthorizationRequest} associated to the
+	 * provided {@code HttpServletRequest} or if not available returns {@code null}.
+	 *
+	 * @param request the {@code HttpServletRequest}
+	 * @return the removed {@link OAuth2AuthorizationRequest} or {@code null} if not available
+	 */
+	T removeAuthorizationRequest(HttpServletRequest request);
 
 }

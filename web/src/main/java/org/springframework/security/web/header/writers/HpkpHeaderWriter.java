@@ -113,7 +113,7 @@ public final class HpkpHeaderWriter implements HeaderWriter {
 
 	private final RequestMatcher requestMatcher = new SecureRequestMatcher();
 
-	private Map<String, String> pins = new LinkedHashMap<String, String>();
+	private Map<String, String> pins = new LinkedHashMap<>();
 
 	private long maxAgeInSeconds;
 
@@ -133,7 +133,6 @@ public final class HpkpHeaderWriter implements HeaderWriter {
 	 * @param reportOnly maps to {@link #setReportOnly(boolean)}
 	 */
 	public HpkpHeaderWriter(long maxAgeInSeconds, boolean includeSubDomains, boolean reportOnly) {
-		super();
 		this.maxAgeInSeconds = maxAgeInSeconds;
 		this.includeSubDomains = includeSubDomains;
 		this.reportOnly = reportOnly;

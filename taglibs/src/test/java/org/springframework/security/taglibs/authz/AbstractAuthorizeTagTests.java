@@ -38,7 +38,6 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.security.access.expression.SecurityExpressionHandler;
 import org.springframework.security.authentication.TestingAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.WebAttributes;
 import org.springframework.security.web.access.WebInvocationPrivilegeEvaluator;
@@ -79,7 +78,7 @@ public class AbstractAuthorizeTagTests {
 
 		tag.authorizeUsingUrlCheck();
 
-		verify(expected).isAllowed(eq(""), eq(uri), eq("GET"), any(Authentication.class));
+		verify(expected).isAllowed(eq(""), eq(uri), eq("GET"), any());
 	}
 
 	@Test
@@ -93,17 +92,17 @@ public class AbstractAuthorizeTagTests {
 
 		tag.authorizeUsingUrlCheck();
 
-		verify(expected).isAllowed(eq(""), eq(uri), eq("GET"), any(Authentication.class));
+		verify(expected).isAllowed(eq(""), eq(uri), eq("GET"), any());
 	}
 
 	@Test
 	@SuppressWarnings("rawtypes")
 	public void expressionFromChildContext() throws IOException {
-		SecurityContextHolder.getContext().setAuthentication(new TestingAuthenticationToken("user", "pass","USER"));
+		SecurityContextHolder.getContext().setAuthentication(new TestingAuthenticationToken("user", "pass", "USER"));
 		DefaultWebSecurityExpressionHandler expected = new DefaultWebSecurityExpressionHandler();
 		tag.setAccess("permitAll");
 		WebApplicationContext wac = mock(WebApplicationContext.class);
-		when(wac.getBeansOfType(SecurityExpressionHandler.class)).thenReturn(Collections.<String,SecurityExpressionHandler>singletonMap("wipe", expected));
+		when(wac.getBeansOfType(SecurityExpressionHandler.class)).thenReturn(Collections.<String, SecurityExpressionHandler>singletonMap("wipe", expected));
 		servletContext.setAttribute("org.springframework.web.servlet.FrameworkServlet.CONTEXT.dispatcher", wac);
 
 		assertThat(tag.authorize()).isTrue();

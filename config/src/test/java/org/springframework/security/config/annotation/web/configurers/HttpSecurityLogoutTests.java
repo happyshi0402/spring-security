@@ -52,7 +52,7 @@ public class HttpSecurityLogoutTests {
 
 	@Before
 	public void setup() {
-		request = new MockHttpServletRequest();
+		request = new MockHttpServletRequest("GET", "");
 		response = new MockHttpServletResponse();
 		chain = new MockFilterChain();
 	}
@@ -70,7 +70,7 @@ public class HttpSecurityLogoutTests {
 		loadConfig(ClearAuthenticationFalseConfig.class);
 
 		SecurityContext currentContext = SecurityContextHolder.createEmptyContext();
-		currentContext.setAuthentication(new TestingAuthenticationToken("user", "password","ROLE_USER"));
+		currentContext.setAuthentication(new TestingAuthenticationToken("user", "password", "ROLE_USER"));
 
 		request.getSession().setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, currentContext);
 		request.setMethod("POST");

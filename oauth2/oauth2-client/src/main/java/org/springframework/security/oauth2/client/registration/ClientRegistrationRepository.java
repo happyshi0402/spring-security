@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2017 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,15 @@
  */
 package org.springframework.security.oauth2.client.registration;
 
-import java.util.List;
-
 /**
- * Implementations of this interface are responsible for the management of {@link ClientRegistration}'s.
+ * A repository for OAuth 2.0 / OpenID Connect 1.0 {@link ClientRegistration}(s).
  *
  * <p>
- * The <i>primary</i> client registration information is stored with the associated <i>Authorization Server</i>.
- * However, there may be uses cases where <i>secondary</i> information may need to be managed
- * that is not supported (or provided) by the <i>Authorization Server</i>.
- * This interface provides this capability for managing the <i>primary</i> and <i>secondary</i>
- * information of a client registration.
+ * <b>NOTE:</b> Client registration information is ultimately stored and owned
+ * by the associated Authorization Server.
+ * Therefore, this repository provides the capability to store a sub-set copy
+ * of the <i>primary</i> client registration information
+ * externally from the Authorization Server.
  *
  * @author Joe Grandja
  * @since 5.0
@@ -33,10 +31,12 @@ import java.util.List;
  */
 public interface ClientRegistrationRepository {
 
-	ClientRegistration getRegistrationByClientId(String clientId);
-
-	ClientRegistration getRegistrationByClientAlias(String clientAlias);
-
-	List<ClientRegistration> getRegistrations();
+	/**
+	 * Returns the client registration identified by the provided {@code registrationId}, or {@code null} if not found.
+	 *
+	 * @param registrationId the registration identifier
+	 * @return the {@link ClientRegistration} if found, otherwise {@code null}
+	 */
+	ClientRegistration findByRegistrationId(String registrationId);
 
 }
