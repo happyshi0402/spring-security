@@ -29,9 +29,11 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUserAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.util.Assert;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -50,18 +52,25 @@ public class OidcUserService implements OAuth2UserService<OidcUserRequest, OidcU
 	private static final String INVALID_USER_INFO_RESPONSE_ERROR_CODE = "invalid_user_info_response";
 	private final Set<String> userInfoScopes = new HashSet<>(
 		Arrays.asList(OidcScopes.PROFILE, OidcScopes.EMAIL, OidcScopes.ADDRESS, OidcScopes.PHONE));
-	private final OAuth2UserService<OAuth2UserRequest, OAuth2User> defaultUserService = new DefaultOAuth2UserService();
+	private OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2UserService = new DefaultOAuth2UserService();
 
 	@Override
 	public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
 		Assert.notNull(userRequest, "userRequest cannot be null");
 		OidcUserInfo userInfo = null;
 		if (this.shouldRetrieveUserInfo(userRequest)) {
-			OAuth2User oauth2User = this.defaultUserService.loadUser(userRequest);
+			OAuth2User oauth2User = this.oauth2UserService.loadUser(userRequest);
 			userInfo = new OidcUserInfo(oauth2User.getAttributes());
 
 			// http://openid.net/specs/openid-connect-core-1_0.html#UserInfoResponse
-			// Due to the possibility of token substitution attacks (see Section 16.11),
+
+			// 1) The sub (subject) Claim MUST always be returned in the UserInfo Response
+			if (userInfo.getSubject() == null) {
+				OAuth2Error oauth2Error = new OAuth2Error(INVALID_USER_INFO_RESPONSE_ERROR_CODE);
+				throw new OAuth2AuthenticationException(oauth2Error, oauth2Error.toString());
+			}
+
+			// 2) Due to the possibility of token substitution attacks (see Section 16.11),
 			// the UserInfo Response is not guaranteed to be about the End-User
 			// identified by the sub (subject) element of the ID Token.
 			// The sub Claim in the UserInfo Response MUST be verified to exactly match
@@ -73,9 +82,8 @@ public class OidcUserService implements OAuth2UserService<OidcUserRequest, OidcU
 			}
 		}
 
-		GrantedAuthority authority = new OidcUserAuthority(userRequest.getIdToken(), userInfo);
-		Set<GrantedAuthority> authorities = new HashSet<>();
-		authorities.add(authority);
+		Set<GrantedAuthority> authorities = Collections.singleton(
+				new OidcUserAuthority(userRequest.getIdToken(), userInfo));
 
 		OidcUser user;
 
@@ -108,9 +116,20 @@ public class OidcUserService implements OAuth2UserService<OidcUserRequest, OidcU
 			userRequest.getClientRegistration().getAuthorizationGrantType())) {
 
 			// Return true if there is at least one match between the authorized scope(s) and UserInfo scope(s)
-			return userRequest.getAccessToken().getScopes().stream().anyMatch(userInfoScopes::contains);
+			return CollectionUtils.containsAny(userRequest.getAccessToken().getScopes(), this.userInfoScopes);
 		}
 
 		return false;
+	}
+
+	/**
+	 * Sets the {@link OAuth2UserService} used when requesting the user info resource.
+	 *
+	 * @since 5.1
+	 * @param oauth2UserService the {@link OAuth2UserService} used when requesting the user info resource.
+	 */
+	public final void setOauth2UserService(OAuth2UserService<OAuth2UserRequest, OAuth2User> oauth2UserService) {
+		Assert.notNull(oauth2UserService, "oauth2UserService cannot be null");
+		this.oauth2UserService = oauth2UserService;
 	}
 }

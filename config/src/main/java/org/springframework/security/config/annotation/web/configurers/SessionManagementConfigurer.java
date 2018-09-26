@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package org.springframework.security.config.annotation.web.configurers;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
@@ -105,7 +104,7 @@ public final class SessionManagementConfigurer<H extends HttpSecurityBuilder<H>>
 	private Integer maximumSessions;
 	private String expiredUrl;
 	private boolean maxSessionsPreventsLogin;
-	private SessionCreationPolicy sessionPolicy = SessionCreationPolicy.IF_REQUIRED;
+	private SessionCreationPolicy sessionPolicy;
 	private boolean enableSessionUrlRewriting;
 	private String invalidSessionUrl;
 	private String sessionAuthenticationErrorUrl;
@@ -212,24 +211,25 @@ public final class SessionManagementConfigurer<H extends HttpSecurityBuilder<H>>
 	}
 
 	/**
-	 * Allows explicitly specifying the {@link SessionAuthenticationStrategy}. The default
-	 * is to use {@link SessionFixationProtectionStrategy}. If restricting the maximum
-	 * number of sessions is configured, then
+	 * Allows explicitly specifying the {@link SessionAuthenticationStrategy}.
+	 * The default is to use {@link SessionFixationProtectionStrategy} for Servlet 3.1 or
+	 * {@link ChangeSessionIdAuthenticationStrategy} for Servlet 3.1+.
+	 * If restricting the maximum number of sessions is configured, then
 	 * {@link CompositeSessionAuthenticationStrategy} delegating to
 	 * {@link ConcurrentSessionControlAuthenticationStrategy},
-	 * {@link SessionFixationProtectionStrategy} (the default) OR
-	 * {@link SessionAuthenticationStrategy} the supplied sessionAuthenticationStrategy,
+	 * the default OR supplied {@code SessionAuthenticationStrategy} and
 	 * {@link RegisterSessionAuthenticationStrategy}.
 	 *
+	 * <p>
 	 * NOTE: Supplying a custom {@link SessionAuthenticationStrategy} will override the
-	 * default provided {@link SessionFixationProtectionStrategy}.
+	 * default session fixation strategy.
 	 *
 	 * @param sessionAuthenticationStrategy
 	 * @return the {@link SessionManagementConfigurer} for further customizations
 	 */
 	public SessionManagementConfigurer<H> sessionAuthenticationStrategy(
 			SessionAuthenticationStrategy sessionAuthenticationStrategy) {
-		this.sessionFixationAuthenticationStrategy = sessionAuthenticationStrategy;
+		this.providedSessionAuthenticationStrategy = sessionAuthenticationStrategy;
 		return this;
 	}
 
@@ -480,7 +480,7 @@ public final class SessionManagementConfigurer<H extends HttpSecurityBuilder<H>>
 	private ConcurrentSessionFilter createConccurencyFilter(H http) {
 		SessionInformationExpiredStrategy expireStrategy = getExpiredSessionStrategy();
 		SessionRegistry sessionRegistry = getSessionRegistry(http);
-		if(expireStrategy == null) {
+		if (expireStrategy == null) {
 			return new ConcurrentSessionFilter(sessionRegistry);
 		}
 
@@ -549,7 +549,14 @@ public final class SessionManagementConfigurer<H extends HttpSecurityBuilder<H>>
 	 * @return the {@link SessionCreationPolicy}
 	 */
 	SessionCreationPolicy getSessionCreationPolicy() {
-		return this.sessionPolicy;
+		if (this.sessionPolicy != null) {
+			return this.sessionPolicy;
+		}
+
+		SessionCreationPolicy sessionPolicy =
+				getBuilder().getSharedObject(SessionCreationPolicy.class);
+		return sessionPolicy == null ?
+				SessionCreationPolicy.IF_REQUIRED : sessionPolicy;
 	}
 
 	/**
@@ -558,8 +565,9 @@ public final class SessionManagementConfigurer<H extends HttpSecurityBuilder<H>>
 	 * @return true if the {@link SessionCreationPolicy} allows session creation
 	 */
 	private boolean isAllowSessionCreation() {
-		return SessionCreationPolicy.ALWAYS == this.sessionPolicy
-				|| SessionCreationPolicy.IF_REQUIRED == this.sessionPolicy;
+		SessionCreationPolicy sessionPolicy = getSessionCreationPolicy();
+		return SessionCreationPolicy.ALWAYS == sessionPolicy
+				|| SessionCreationPolicy.IF_REQUIRED == sessionPolicy;
 	}
 
 	/**
@@ -567,7 +575,8 @@ public final class SessionManagementConfigurer<H extends HttpSecurityBuilder<H>>
 	 * @return
 	 */
 	private boolean isStateless() {
-		return SessionCreationPolicy.STATELESS == this.sessionPolicy;
+		SessionCreationPolicy sessionPolicy = getSessionCreationPolicy();
+		return SessionCreationPolicy.STATELESS == sessionPolicy;
 	}
 
 	/**
@@ -584,8 +593,8 @@ public final class SessionManagementConfigurer<H extends HttpSecurityBuilder<H>>
 		List<SessionAuthenticationStrategy> delegateStrategies = this.sessionAuthenticationStrategies;
 		SessionAuthenticationStrategy defaultSessionAuthenticationStrategy;
 		if (this.providedSessionAuthenticationStrategy == null) {
-			// If a user provided SessionAuthenticationStrategy is not supplied
-			// then default to SessionFixationProtectionStrategy
+			// If the user did not provide a SessionAuthenticationStrategy
+			// then default to sessionFixationAuthenticationStrategy
 			defaultSessionAuthenticationStrategy = postProcess(
 					this.sessionFixationAuthenticationStrategy);
 		}

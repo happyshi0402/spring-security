@@ -22,15 +22,18 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.client.registration.TestClientRegistrations;
+import org.springframework.security.oauth2.core.AuthenticationMethod;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2UserAuthority;
+
+import okhttp3.mockwebserver.RecordedRequest;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
@@ -59,18 +62,8 @@ public class DefaultReactiveOAuth2UserServiceTests {
 
 		String userInfoUri = this.server.url("/user").toString();
 
-		this.clientRegistration = ClientRegistration.withRegistrationId("github")
-				.redirectUriTemplate("{baseUrl}/{action}/oauth2/code/{registrationId}")
-				.clientAuthenticationMethod(ClientAuthenticationMethod.BASIC)
-				.authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
-				.scope("read:user")
-				.authorizationUri("https://github.com/login/oauth/authorize")
-				.tokenUri("https://github.com/login/oauth/access_token")
-				.userInfoUri(userInfoUri)
-				.userNameAttributeName("user-name")
-				.clientName("GitHub")
-				.clientId("clientId")
-				.clientSecret("clientSecret");
+		this.clientRegistration = TestClientRegistrations.clientRegistration()
+				.userInfoUri(userInfoUri);
 	}
 
 	@After
@@ -113,7 +106,7 @@ public class DefaultReactiveOAuth2UserServiceTests {
 	@Test
 	public void loadUserWhenUserInfoSuccessResponseThenReturnUser() throws Exception {
 		String userInfoResponse = "{\n" +
-				"	\"user-name\": \"user1\",\n" +
+				"	\"id\": \"user1\",\n" +
 				"   \"first-name\": \"first\",\n" +
 				"   \"last-name\": \"last\",\n" +
 				"   \"middle-name\": \"middle\",\n" +
@@ -126,7 +119,7 @@ public class DefaultReactiveOAuth2UserServiceTests {
 
 		assertThat(user.getName()).isEqualTo("user1");
 		assertThat(user.getAttributes().size()).isEqualTo(6);
-		assertThat(user.getAttributes().get("user-name")).isEqualTo("user1");
+		assertThat(user.getAttributes().get("id")).isEqualTo("user1");
 		assertThat(user.getAttributes().get("first-name")).isEqualTo("first");
 		assertThat(user.getAttributes().get("last-name")).isEqualTo("last");
 		assertThat(user.getAttributes().get("middle-name")).isEqualTo("middle");
@@ -140,10 +133,55 @@ public class DefaultReactiveOAuth2UserServiceTests {
 		assertThat(userAuthority.getAttributes()).isEqualTo(user.getAttributes());
 	}
 
+	// gh-5500
+	@Test
+	public void loadUserWhenAuthenticationMethodHeaderSuccessResponseThenHttpMethodGet() throws Exception {
+		this.clientRegistration.userInfoAuthenticationMethod(AuthenticationMethod.HEADER);
+		String userInfoResponse = "{\n" +
+				"	\"id\": \"user1\",\n" +
+				"   \"first-name\": \"first\",\n" +
+				"   \"last-name\": \"last\",\n" +
+				"   \"middle-name\": \"middle\",\n" +
+				"   \"address\": \"address\",\n" +
+				"   \"email\": \"user1@example.com\"\n" +
+				"}\n";
+		enqueueApplicationJsonBody(userInfoResponse);
+
+		this.userService.loadUser(oauth2UserRequest()).block();
+
+		RecordedRequest request = this.server.takeRequest();
+		assertThat(request.getMethod()).isEqualTo(HttpMethod.GET.name());
+		assertThat(request.getHeader(HttpHeaders.ACCEPT)).isEqualTo(MediaType.APPLICATION_JSON_VALUE);
+		assertThat(request.getHeader(HttpHeaders.AUTHORIZATION)).isEqualTo("Bearer " + this.accessToken.getTokenValue());
+	}
+
+	// gh-5500
+	@Test
+	public void loadUserWhenAuthenticationMethodFormSuccessResponseThenHttpMethodPost() throws Exception {
+		this.clientRegistration.userInfoAuthenticationMethod( AuthenticationMethod.FORM);
+		String userInfoResponse = "{\n" +
+				"	\"id\": \"user1\",\n" +
+				"   \"first-name\": \"first\",\n" +
+				"   \"last-name\": \"last\",\n" +
+				"   \"middle-name\": \"middle\",\n" +
+				"   \"address\": \"address\",\n" +
+				"   \"email\": \"user1@example.com\"\n" +
+				"}\n";
+		enqueueApplicationJsonBody(userInfoResponse);
+
+		this.userService.loadUser(oauth2UserRequest()).block();
+
+		RecordedRequest request = this.server.takeRequest();
+		assertThat(request.getMethod()).isEqualTo(HttpMethod.POST.name());
+		assertThat(request.getHeader(HttpHeaders.ACCEPT)).isEqualTo(MediaType.APPLICATION_JSON_VALUE);
+		assertThat(request.getHeader(HttpHeaders.CONTENT_TYPE)).contains(MediaType.APPLICATION_FORM_URLENCODED_VALUE);
+		assertThat(request.getBody().readUtf8()).isEqualTo("access_token=" + this.accessToken.getTokenValue());
+	}
+
 	@Test
 	public void loadUserWhenUserInfoSuccessResponseInvalidThenThrowOAuth2AuthenticationException() throws Exception {
 		String userInfoResponse = "{\n" +
-				"	\"user-name\": \"user1\",\n" +
+				"	\"id\": \"user1\",\n" +
 				"   \"first-name\": \"first\",\n" +
 				"   \"last-name\": \"last\",\n" +
 				"   \"middle-name\": \"middle\",\n" +

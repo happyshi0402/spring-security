@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -223,7 +223,7 @@ public abstract class WebSecurityConfigurerAdapter implements
 			List<AbstractHttpConfigurer> defaultHttpConfigurers =
 					SpringFactoriesLoader.loadFactories(AbstractHttpConfigurer.class, classLoader);
 
-			for(AbstractHttpConfigurer configurer : defaultHttpConfigurers) {
+			for (AbstractHttpConfigurer configurer : defaultHttpConfigurers) {
 				http.apply(configurer);
 			}
 		}
@@ -257,7 +257,7 @@ public abstract class WebSecurityConfigurerAdapter implements
 	 * {@link AuthenticationManagerBuilder} that was passed in. Otherwise, autowire the
 	 * {@link AuthenticationManager} by type.
 	 *
-	 * @return
+	 * @return the {@link AuthenticationManager} to use
 	 * @throws Exception
 	 */
 	protected AuthenticationManager authenticationManager() throws Exception {
@@ -291,7 +291,7 @@ public abstract class WebSecurityConfigurerAdapter implements
 	 *
 	 * To change the instance returned, developers should change
 	 * {@link #userDetailsService()} instead
-	 * @return
+	 * @return the {@link UserDetailsService}
 	 * @throws Exception
 	 * @see #userDetailsService()
 	 */
@@ -308,7 +308,7 @@ public abstract class WebSecurityConfigurerAdapter implements
 	 * {@link ApplicationContext}. Developers should override this method when changing
 	 * the instance of {@link #userDetailsServiceBean()}.
 	 *
-	 * @return
+	 * @return the {@link UserDetailsService} to use
 	 */
 	protected UserDetailsService userDetailsService() {
 		AuthenticationManagerBuilder globalAuthBuilder = context
@@ -591,6 +591,11 @@ public abstract class WebSecurityConfigurerAdapter implements
 		public boolean matches(CharSequence rawPassword,
 			String encodedPassword) {
 			return getPasswordEncoder().matches(rawPassword, encodedPassword);
+		}
+
+		@Override
+		public boolean upgradeEncoding(String encodedPassword) {
+			return getPasswordEncoder().upgradeEncoding(encodedPassword);
 		}
 
 		private PasswordEncoder getPasswordEncoder() {

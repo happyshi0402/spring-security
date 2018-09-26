@@ -15,15 +15,20 @@
  */
 package org.springframework.security.oauth2.client.registration;
 
+import org.springframework.security.core.SpringSecurityCoreVersion;
+import org.springframework.security.oauth2.core.AuthenticationMethod;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
-import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -33,7 +38,8 @@ import java.util.Set;
  * @since 5.0
  * @see <a target="_blank" href="https://tools.ietf.org/html/rfc6749#section-2">Section 2 Client Registration</a>
  */
-public final class ClientRegistration {
+public final class ClientRegistration implements Serializable {
+	private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
 	private String registrationId;
 	private String clientId;
 	private String clientSecret;
@@ -147,11 +153,13 @@ public final class ClientRegistration {
 	/**
 	 * Details of the Provider.
 	 */
-	public class ProviderDetails {
+	public class ProviderDetails implements Serializable {
+		private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
 		private String authorizationUri;
 		private String tokenUri;
 		private UserInfoEndpoint userInfoEndpoint = new UserInfoEndpoint();
 		private String jwkSetUri;
+		private Map<String, Object> configurationMetadata = Collections.emptyMap();
 
 		private ProviderDetails() {
 		}
@@ -193,10 +201,22 @@ public final class ClientRegistration {
 		}
 
 		/**
+		 * Returns a {@code Map} of the metadata describing the provider's configuration.
+		 *
+		 * @since 5.1
+		 * @return a {@code Map} of the metadata describing the provider's configuration
+		 */
+		public Map<String, Object> getConfigurationMetadata() {
+			return this.configurationMetadata;
+		}
+
+		/**
 		 * Details of the UserInfo Endpoint.
 		 */
-		public class UserInfoEndpoint {
+		public class UserInfoEndpoint implements Serializable {
+			private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
 			private String uri;
+			private AuthenticationMethod authenticationMethod = AuthenticationMethod.HEADER;
 			private String userNameAttributeName;
 
 			private UserInfoEndpoint() {
@@ -209,6 +229,16 @@ public final class ClientRegistration {
 			 */
 			public String getUri() {
 				return this.uri;
+			}
+
+			/**
+			 * Returns the authentication method for the user info endpoint.
+			 *
+			 * @since 5.1
+			 * @return the {@link AuthenticationMethod} for the user info endpoint.
+			 */
+			public AuthenticationMethod getAuthenticationMethod() {
+				return this.authenticationMethod;
 			}
 
 			/**
@@ -236,7 +266,8 @@ public final class ClientRegistration {
 	/**
 	 * A builder for {@link ClientRegistration}.
 	 */
-	public static class Builder {
+	public static class Builder implements Serializable {
+		private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
 		private String registrationId;
 		private String clientId;
 		private String clientSecret;
@@ -247,12 +278,25 @@ public final class ClientRegistration {
 		private String authorizationUri;
 		private String tokenUri;
 		private String userInfoUri;
+		private AuthenticationMethod userInfoAuthenticationMethod = AuthenticationMethod.HEADER;
 		private String userNameAttributeName;
 		private String jwkSetUri;
+		private Map<String, Object> configurationMetadata = Collections.emptyMap();
 		private String clientName;
 
 		private Builder(String registrationId) {
 			this.registrationId = registrationId;
+		}
+
+		/**
+		 * Sets the registration id.
+		 *
+		 * @param registrationId the registration id
+		 * @return the {@link Builder}
+		 */
+		public Builder registrationId(String registrationId) {
+			this.registrationId = registrationId;
+			return this;
 		}
 
 		/**
@@ -373,6 +417,18 @@ public final class ClientRegistration {
 		}
 
 		/**
+		 * Sets the authentication method for the user info endpoint.
+		 *
+		 * @since 5.1
+		 * @param userInfoAuthenticationMethod the authentication method for the user info endpoint
+		 * @return the {@link Builder}
+		 */
+		public Builder userInfoAuthenticationMethod(AuthenticationMethod userInfoAuthenticationMethod) {
+			this.userInfoAuthenticationMethod = userInfoAuthenticationMethod;
+			return this;
+		}
+
+		/**
 		 * Sets the attribute name used to access the user's name from the user info response.
 		 *
 		 * @param userNameAttributeName the attribute name used to access the user's name from the user info response
@@ -395,6 +451,20 @@ public final class ClientRegistration {
 		}
 
 		/**
+		 * Sets the metadata describing the provider's configuration.
+		 *
+		 * @since 5.1
+		 * @param configurationMetadata the metadata describing the provider's configuration
+		 * @return the {@link Builder}
+		 */
+		public Builder providerConfigurationMetadata(Map<String, Object> configurationMetadata) {
+			if (configurationMetadata != null) {
+				this.configurationMetadata = new LinkedHashMap<>(configurationMetadata);
+			}
+			return this;
+		}
+
+		/**
 		 * Sets the logical name of the client or registration.
 		 *
 		 * @param clientName the client or registration name
@@ -412,7 +482,9 @@ public final class ClientRegistration {
 		 */
 		public ClientRegistration build() {
 			Assert.notNull(this.authorizationGrantType, "authorizationGrantType cannot be null");
-			if (AuthorizationGrantType.IMPLICIT.equals(this.authorizationGrantType)) {
+			if (AuthorizationGrantType.CLIENT_CREDENTIALS.equals(this.authorizationGrantType)) {
+				this.validateClientCredentialsGrantType();
+			} else if (AuthorizationGrantType.IMPLICIT.equals(this.authorizationGrantType)) {
 				this.validateImplicitGrantType();
 			} else {
 				this.validateAuthorizationCodeGrantType();
@@ -425,7 +497,7 @@ public final class ClientRegistration {
 
 			clientRegistration.registrationId = this.registrationId;
 			clientRegistration.clientId = this.clientId;
-			clientRegistration.clientSecret = this.clientSecret;
+			clientRegistration.clientSecret = StringUtils.hasText(this.clientSecret) ? this.clientSecret : "";
 			clientRegistration.clientAuthenticationMethod = this.clientAuthenticationMethod;
 			clientRegistration.authorizationGrantType = this.authorizationGrantType;
 			clientRegistration.redirectUriTemplate = this.redirectUriTemplate;
@@ -435,11 +507,14 @@ public final class ClientRegistration {
 			providerDetails.authorizationUri = this.authorizationUri;
 			providerDetails.tokenUri = this.tokenUri;
 			providerDetails.userInfoEndpoint.uri = this.userInfoUri;
+			providerDetails.userInfoEndpoint.authenticationMethod = this.userInfoAuthenticationMethod;
 			providerDetails.userInfoEndpoint.userNameAttributeName = this.userNameAttributeName;
 			providerDetails.jwkSetUri = this.jwkSetUri;
+			providerDetails.configurationMetadata = Collections.unmodifiableMap(this.configurationMetadata);
 			clientRegistration.providerDetails = providerDetails;
 
-			clientRegistration.clientName = this.clientName;
+			clientRegistration.clientName = StringUtils.hasText(this.clientName) ?
+					this.clientName : this.registrationId;
 
 			return clientRegistration;
 		}
@@ -449,17 +524,9 @@ public final class ClientRegistration {
 					() -> "authorizationGrantType must be " + AuthorizationGrantType.AUTHORIZATION_CODE.getValue());
 			Assert.hasText(this.registrationId, "registrationId cannot be empty");
 			Assert.hasText(this.clientId, "clientId cannot be empty");
-			Assert.hasText(this.clientSecret, "clientSecret cannot be empty");
-			Assert.notNull(this.clientAuthenticationMethod, "clientAuthenticationMethod cannot be null");
 			Assert.hasText(this.redirectUriTemplate, "redirectUriTemplate cannot be empty");
-			Assert.notEmpty(this.scopes, "scopes cannot be empty");
 			Assert.hasText(this.authorizationUri, "authorizationUri cannot be empty");
 			Assert.hasText(this.tokenUri, "tokenUri cannot be empty");
-			if (this.scopes.contains(OidcScopes.OPENID)) {
-				// OIDC Clients need to verify/validate the ID Token
-				Assert.hasText(this.jwkSetUri, "jwkSetUri cannot be empty");
-			}
-			Assert.hasText(this.clientName, "clientName cannot be empty");
 		}
 
 		private void validateImplicitGrantType() {
@@ -468,9 +535,15 @@ public final class ClientRegistration {
 			Assert.hasText(this.registrationId, "registrationId cannot be empty");
 			Assert.hasText(this.clientId, "clientId cannot be empty");
 			Assert.hasText(this.redirectUriTemplate, "redirectUriTemplate cannot be empty");
-			Assert.notEmpty(this.scopes, "scopes cannot be empty");
 			Assert.hasText(this.authorizationUri, "authorizationUri cannot be empty");
-			Assert.hasText(this.clientName, "clientName cannot be empty");
+		}
+
+		private void validateClientCredentialsGrantType() {
+			Assert.isTrue(AuthorizationGrantType.CLIENT_CREDENTIALS.equals(this.authorizationGrantType),
+					() -> "authorizationGrantType must be " + AuthorizationGrantType.CLIENT_CREDENTIALS.getValue());
+			Assert.hasText(this.registrationId, "registrationId cannot be empty");
+			Assert.hasText(this.clientId, "clientId cannot be empty");
+			Assert.hasText(this.tokenUri, "tokenUri cannot be empty");
 		}
 	}
 }

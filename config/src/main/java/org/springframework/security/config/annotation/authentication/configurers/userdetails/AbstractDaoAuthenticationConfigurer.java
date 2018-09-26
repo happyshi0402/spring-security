@@ -21,6 +21,7 @@ import org.springframework.security.config.annotation.SecurityBuilder;
 import org.springframework.security.config.annotation.authentication.ProviderManagerBuilder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.userdetails.UserDetailsPasswordService;
 
 /**
  * Allows configuring a {@link DaoAuthenticationProvider}
@@ -46,6 +47,9 @@ abstract class AbstractDaoAuthenticationConfigurer<B extends ProviderManagerBuil
 	protected AbstractDaoAuthenticationConfigurer(U userDetailsService) {
 		this.userDetailsService = userDetailsService;
 		provider.setUserDetailsService(userDetailsService);
+		if (userDetailsService instanceof UserDetailsPasswordService) {
+			this.provider.setUserDetailsPasswordService((UserDetailsPasswordService) userDetailsService);
+		}
 	}
 
 	/**
@@ -65,11 +69,16 @@ abstract class AbstractDaoAuthenticationConfigurer<B extends ProviderManagerBuil
 	 * {@link DaoAuthenticationProvider}. The default is to use plain text.
 	 *
 	 * @param passwordEncoder The {@link PasswordEncoder} to use.
-	 * @return
+	 * @return the {@link AbstractDaoAuthenticationConfigurer} for further customizations
 	 */
 	@SuppressWarnings("unchecked")
 	public C passwordEncoder(PasswordEncoder passwordEncoder) {
 		provider.setPasswordEncoder(passwordEncoder);
+		return (C) this;
+	}
+
+	public C userDetailsPasswordManager(UserDetailsPasswordService passwordManager) {
+		provider.setUserDetailsPasswordService(passwordManager);
 		return (C) this;
 	}
 

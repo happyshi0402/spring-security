@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,7 +139,7 @@ public class SecurityMockServerConfigurers {
 	}
 
 	/**
-	 * Updates the WebServerExchange using {@code {@link SecurityMockServerConfigurers#mockUser(UserDetails)}. Defaults to use a
+	 * Updates the WebServerExchange using {@code {@link SecurityMockServerConfigurers#mockUser(UserDetails)}}. Defaults to use a
 	 * password of "password" and granted authorities of "ROLE_USER".
 	 */
 	public static class UserExchangeMutator implements WebTestClientConfigurer, MockServerConfigurer {
@@ -286,7 +286,7 @@ public class SecurityMockServerConfigurers {
 		@Override
 		public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain webFilterChain) {
 			Supplier<Mono<SecurityContext>> context = exchange.getAttribute(ATTRIBUTE_NAME);
-			if(context != null) {
+			if (context != null) {
 				exchange.getAttributes().remove(ATTRIBUTE_NAME);
 				return webFilterChain.filter(exchange)
 					.subscriberContext(ReactiveSecurityContextHolder.withSecurityContext(context.get()));

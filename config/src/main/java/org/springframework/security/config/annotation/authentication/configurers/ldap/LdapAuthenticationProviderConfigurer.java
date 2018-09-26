@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -158,7 +158,7 @@ public class LdapAuthenticationProviderConfigurer<B extends ProviderManagerBuild
 	 * @throws Exception if errors in {@link SimpleAuthorityMapper#afterPropertiesSet()}
 	 */
 	protected GrantedAuthoritiesMapper getAuthoritiesMapper() throws Exception {
-		if(authoritiesMapper != null) {
+		if (authoritiesMapper != null) {
 			return authoritiesMapper;
 		}
 
@@ -302,7 +302,7 @@ public class LdapAuthenticationProviderConfigurer<B extends ProviderManagerBuild
 	/**
 	 * Specifies the attribute name which contains the role name. Default is "cn".
 	 * @param groupRoleAttribute the attribute name that maps a group to a role.
-	 * @return
+	 * @return the {@link LdapAuthenticationProviderConfigurer} for further customizations
 	 */
 	public LdapAuthenticationProviderConfigurer<B> groupRoleAttribute(
 			String groupRoleAttribute) {
@@ -384,11 +384,11 @@ public class LdapAuthenticationProviderConfigurer<B extends ProviderManagerBuild
 	 */
 	public final class PasswordCompareConfigurer {
 
-		/**
+		/**Us
 		 * Allows specifying the {@link PasswordEncoder} to use. The default is
 		 * {@link org.springframework.security.crypto.password.NoOpPasswordEncoder}.
 		 * @param passwordEncoder the {@link PasswordEncoder} to use
-		 * @return the {@link PasswordEncoder} to use
+		 * @return the {@link PasswordCompareConfigurer} for further customizations
 		 */
 		public PasswordCompareConfigurer passwordEncoder(PasswordEncoder passwordEncoder) {
 			LdapAuthenticationProviderConfigurer.this.passwordEncoder = passwordEncoder;
@@ -602,7 +602,7 @@ public class LdapAuthenticationProviderConfigurer<B extends ProviderManagerBuild
 	}
 
 	/**
-	 * @return
+	 * @return the {@link PasswordCompareConfigurer} for further customizations
 	 */
 	public PasswordCompareConfigurer passwordCompare() {
 		return new PasswordCompareConfigurer().passwordAttribute("password")
